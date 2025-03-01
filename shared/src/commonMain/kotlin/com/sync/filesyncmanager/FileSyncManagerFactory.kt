@@ -5,7 +5,7 @@ import com.sync.filesyncmanager.domain.SyncConfig
 import io.ktor.client.HttpClient
 import okio.FileSystem
 
-expect class FileSyncManagerFactory() {
+expect class FileSyncManagerFactory {
     /**
      * Creates a FileSyncManager instance
      */

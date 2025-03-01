@@ -1,6 +1,5 @@
 package com.sync.filesyncmanager.util
 
-
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.FileInputStream

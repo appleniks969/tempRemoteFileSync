@@ -3,9 +3,19 @@ package com.sync.filesyncmanager.util
 /**
  * Platform-specific network monitoring
  */
-@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-expect class NetworkMonitor() {
+expect class NetworkMonitor {
+    /**
+     * Checks if any network is available
+     */
     suspend fun isNetworkAvailable(): Boolean
+    
+    /**
+     * Checks if WiFi is available
+     */
     suspend fun isWifiAvailable(): Boolean
+    
+    /**
+     * Checks if an unmetered connection is available
+     */
     suspend fun isUnmeteredNetworkAvailable(): Boolean
 }

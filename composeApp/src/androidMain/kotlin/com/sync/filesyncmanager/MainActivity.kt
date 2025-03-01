@@ -4,16 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
-import com.sync.filesyncmanager.api.FileSyncManagerFactory
-import com.sync.filesyncmanager.data.local.DatabaseFactory
+import androidx.lifecycle.lifecycleScope
 import com.sync.filesyncmanager.domain.SyncConfig
 import com.sync.filesyncmanager.domain.SyncStrategy
-import com.sync.filesyncmanager.util.DataStoreProvider
-import com.sync.filesyncmanager.util.FileUtils
-import com.sync.filesyncmanager.util.NetworkMonitor
 import com.sync.filesyncmanager.viewmodel.FileSyncViewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val viewModel: FileSyncViewModel by viewModels()
@@ -27,20 +22,21 @@ class MainActivity : ComponentActivity() {
             syncStrategy = SyncStrategy.BIDIRECTIONAL
         )
         
-        // Initialize the FileSyncManager
-        val syncManager = FileSyncManagerFactory.create(initialConfig)
-        
-        // Pass the sync manager to the ViewModel
-        viewModel.initialize(syncManager)
-
-        setContent {
-            App(viewModel)
+        // Initialize the FileSyncManager in a coroutine
+        lifecycleScope.launch {
+            // Create a factory instance
+            val syncManagerFactory = FileSyncManagerFactory()
+            
+            // Create the manager with initial config
+            val syncManager = syncManagerFactory.create(initialConfig)
+            
+            // Pass the sync manager to the ViewModel
+            viewModel.initialize(syncManager)
+            
+            // Set the UI content
+            setContent {
+                App(viewModel)
+            }
         }
     }
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App(null)
 }

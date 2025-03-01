@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Android implementation of SyncScheduler using WorkManager
  */
-actual class SyncScheduler actual constructor(private val context: Context) {
+actual class SyncScheduler actual constructor() {
     actual val SYNC_TASK_IDENTIFIER: String = "com.sync.filesyncmanager.SYNC_TASK"
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -36,7 +36,6 @@ actual class SyncScheduler actual constructor(private val context: Context) {
                 try {
                     action()
                 } catch (e: Exception) {
-                    // Log error but don't crash the scheduler
                     println("Error in periodic sync: ${e.message}")
                 }
                 delay(intervalMs)
@@ -44,19 +43,25 @@ actual class SyncScheduler actual constructor(private val context: Context) {
         }
 
         // Also schedule with WorkManager for reliability
-        // Need minimum interval of 15 minutes for WorkManager
-        val workIntervalMs = maxOf(intervalMs, 15 * 60 * 1000)
-        
-        val workRequest = PeriodicWorkRequestBuilder<SyncWorker>(
-            workIntervalMs, TimeUnit.MILLISECONDS
-        ).build()
+        try {
+            val context = AppContextProvider.context
+            
+            // Need minimum interval of 15 minutes for WorkManager
+            val workIntervalMs = maxOf(intervalMs, 15 * 60 * 1000)
+            
+            val workRequest = PeriodicWorkRequestBuilder<SyncWorker>(
+                workIntervalMs, TimeUnit.MILLISECONDS
+            ).build()
 
-        WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(
-                SYNC_TASK_IDENTIFIER,
-                ExistingPeriodicWorkPolicy.UPDATE,
-                workRequest
-            )
+            WorkManager.getInstance(context)
+                .enqueueUniquePeriodicWork(
+                    SYNC_TASK_IDENTIFIER,
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    workRequest
+                )
+        } catch (e: Exception) {
+            println("Could not schedule WorkManager task: ${e.message}")
+        }
     }
 
     actual suspend fun scheduleOnce(delayMs: Long, action: suspend () -> Unit) {
@@ -65,24 +70,34 @@ actual class SyncScheduler actual constructor(private val context: Context) {
             try {
                 action()
             } catch (e: Exception) {
-                // Log error but don't crash the scheduler
                 println("Error in one-time sync: ${e.message}")
             }
         }
 
         // Also schedule with WorkManager for reliability
-        val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
-            .build()
+        try {
+            val context = AppContextProvider.context
+            
+            val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+                .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
+                .build()
 
-        WorkManager.getInstance(context).enqueue(workRequest)
+            WorkManager.getInstance(context).enqueue(workRequest)
+        } catch (e: Exception) {
+            println("Could not schedule WorkManager task: ${e.message}")
+        }
     }
 
     actual fun cancel() {
         periodicJob?.cancel()
         periodicJob = null
 
-        WorkManager.getInstance(context).cancelUniqueWork(SYNC_TASK_IDENTIFIER)
+        try {
+            val context = AppContextProvider.context
+            WorkManager.getInstance(context).cancelUniqueWork(SYNC_TASK_IDENTIFIER)
+        } catch (e: Exception) {
+            // Ignore if context is not available
+        }
     }
 
     // No-op for Android
@@ -102,8 +117,7 @@ actual class SyncScheduler actual constructor(private val context: Context) {
         CoroutineWorker(appContext, params) {
         override suspend fun doWork(): Result {
             try {
-                // This would need to be connected to the actual sync logic in a real implementation
-                // For now, we'll just mark as success
+                // This would need to connect to the actual sync logic in real implementation
                 return Result.success()
             } catch (e: Exception) {
                 return Result.retry()

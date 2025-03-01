@@ -20,7 +20,7 @@ import kotlinx.cinterop.CPointer
  * 
  * Uses Apple's Network framework to check network connectivity
  */
-actual class NetworkMonitor actual constructor() {
+actual class NetworkMonitor() {
     /**
      * Checks if any network is available
      */

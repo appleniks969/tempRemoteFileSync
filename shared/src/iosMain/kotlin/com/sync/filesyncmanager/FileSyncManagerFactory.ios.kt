@@ -13,44 +13,11 @@ import com.sync.filesyncmanager.util.ZipService
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import okio.FileSystem
-import platform.Foundation.NSFileManager
-import platform.Foundation.NSDocumentDirectory
-import platform.Foundation.NSUserDomainMask
 
-/**
- * In-memory database for iOS
- */
-object DatabaseProviderIOS {
-    private val memoryFileMetadataMap = mutableMapOf<String, Any>()
-    
-    fun getMemoryDatabase(): Any {
-        return memoryFileMetadataMap
-    }
-}
-
-/**
- * Stores iOS app configuration
- */
-class IosConfigStore {
-    // Using UserDefaults would be better but keeping simple for this implementation
-    private val configData = mutableMapOf<String, String>()
-    
-    fun getConfigData(key: String): String? {
-        return configData[key]
-    }
-    
-    fun setConfigData(key: String, value: String) {
-        configData[key] = value
-    }
-}
-
-actual class FileSyncManagerFactory actual constructor() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+actual class FileSyncManagerFactory {
     private val configStore = IosConfigStore()
     
     private val json = Json {
@@ -77,8 +44,9 @@ actual class FileSyncManagerFactory actual constructor() {
         // Create network monitor
         val networkMonitor = NetworkMonitor()
 
-        // Create scheduler
+        // Create scheduler and register background tasks
         val syncScheduler = SyncScheduler()
+        syncScheduler.registerTasks()
 
         // Create HTTP client
         val httpClient = createHttpClient()
@@ -123,14 +91,5 @@ actual class FileSyncManagerFactory actual constructor() {
      */
     actual fun getFileSystem(): FileSystem {
         return FileSystem.SYSTEM
-    }
-    
-    /**
-     * Gets the app's documents directory
-     */
-    fun getDocumentsDirectory(): String {
-        val fileManager = NSFileManager.defaultManager
-        val urls = fileManager.URLsForDirectory(NSDocumentDirectory, NSUserDomainMask)
-        return urls.firstOrNull()?.path ?: ""
     }
 }

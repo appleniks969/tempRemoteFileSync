@@ -3,8 +3,7 @@ package com.sync.filesyncmanager.util
 /**
  * Platform-specific scheduler for periodic tasks
  */
-@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-expect class SyncScheduler constructor() {
+expect class SyncScheduler() {
     /**
      * Task identifier for background operations
      */
