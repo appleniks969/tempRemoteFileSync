@@ -11,18 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.sync.filesyncmanager.api.FileSyncManager
-import com.sync.filesyncmanager.domain.FileMetadata
-import com.sync.filesyncmanager.domain.SyncConfig
-import com.sync.filesyncmanager.domain.SyncResult
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-
 /**
  * ViewModel for interacting with the FileSyncManager
  */

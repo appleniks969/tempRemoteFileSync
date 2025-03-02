@@ -3,7 +3,7 @@ package com.sync.filesyncmanager
 
 import com.sync.filesyncmanager.api.FileSyncManager
 import com.sync.filesyncmanager.api.FileSyncManagerImpl
-import com.sync.filesyncmanager.data.PreferenceStorageFactory
+import com.sync.filesyncmanager.domain.PreferenceStorageFactory
 import com.sync.filesyncmanager.data.local.DatabaseProvider
 import com.sync.filesyncmanager.data.local.FileSyncDatabase
 import com.sync.filesyncmanager.domain.ConfigRepository
@@ -33,7 +33,7 @@ actual class FileSyncManagerFactory {
         // Create file system and services
         val fileSystem = getFileSystem()
         val fileService = FileService(fileSystem)
-        val zipService = ZipService(fileSystem, fileService)
+        val zipService = ZipService()
 
         // Create repositories
         val database = getDatabase()

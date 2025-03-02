@@ -374,20 +374,15 @@ class FileSyncManagerImpl(
                     val checksum = localRepo.getFileChecksum(targetPath)
 
                     // Check if the file is a ZIP and unzip is enabled
-                    val isZip = zipService.isZipFile(targetPath)
+                    val isZip = targetPath.lowercase().endsWith(".zip")
                     var extractedPath: String? = null
                     var isExtracted = false
 
                     if (isZip && config.unzipFiles) {
                         // Create extract directory path
                         val extractDir = "$targetPath-extracted"
-                        extractedPath = zipService.unzip(targetPath, extractDir)
-                        isExtracted = extractedPath != null
-
-                        // Delete the original ZIP if configured to do so
-                        if (isExtracted && config.deleteZipAfterExtract) {
-                            localRepo.deleteFile(targetPath)
-                        }
+                        isExtracted = zipService.extractZip(targetPath, extractDir, config.deleteZipAfterExtract)
+                        extractedPath = if (isExtracted) extractDir else null
                     }
 
                     // Get the updated metadata object

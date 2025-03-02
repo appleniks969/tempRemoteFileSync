@@ -1,11 +1,7 @@
-package com.sync.filesyncmanager.data
+package com.sync.filesyncmanager.domain
 
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.sync.filesyncmanager.domain.CacheStrategy
-import com.sync.filesyncmanager.domain.PreferenceStorage
-import com.sync.filesyncmanager.domain.SyncConfig
-import com.sync.filesyncmanager.domain.SyncStrategy
 import com.sync.filesyncmanager.util.DataStoreProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -59,7 +55,18 @@ class AndroidPreferenceStorage(
             baseUrl = "",
             syncStrategy = SyncStrategy.BIDIRECTIONAL,
             cacheStrategy = CacheStrategy.CACHE_RECENT,
-            maxConcurrentTransfers = 3
+            maxConcurrentTransfers = 3,
+            networkType = NetworkType.ANY,
+            autoSyncInterval = null,
+            syncOnlyOnWifi = false,
+            authToken = null,
+            compressionEnabled = true,
+            unzipFiles = false,
+            deleteZipAfterExtract = false,
+            retryCount = 3,
+            retryDelay = 5000L,
+            maxCacheSize = null,
+            fileExpiryDuration = null
         )
     }
 }

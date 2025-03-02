@@ -1,30 +1,41 @@
 package com.sync.filesyncmanager
 
+import android.content.ContentProvider
+import android.content.ContentValues
 import android.content.Context
-import com.sync.filesyncmanager.data.local.DatabaseFactory
+import android.database.Cursor
+import android.net.Uri
 import com.sync.filesyncmanager.util.DataStoreProvider
 import com.sync.filesyncmanager.util.FileUtils
 
 /**
- * Android-specific initializer for the FileSyncManager
+ * Android-specific initializer for the FileSyncManager using ContentProvider
+ * to automatically initialize when the app starts.
  */
-object FileSyncManagerInitializer {
-    private lateinit var appContext: Context
+class FileSyncManagerInitializer : ContentProvider() {
     
-    fun initialize(context: Context) {
-        appContext = context.applicationContext
-        
+    override fun onCreate(): Boolean {
+        val context = context ?: return false
+        initialize(context)
+        return true
+    }
+    
+    private fun initialize(context: Context) {
         // Initialize other components
-        AppContextProvider.initialize(appContext)
-        DatabaseFactory.initialize(appContext)
-        DataStoreProvider.initialize(appContext)
-        FileUtils.initialize(appContext)
+        AppContextProvider.initialize(context)
+        DataStoreProvider.initialize(context)
+        FileUtils.initialize(context)
     }
     
-    fun getContext(): Context {
-        if (!::appContext.isInitialized) {
-            throw IllegalStateException("FileSyncManagerInitializer not initialized")
-        }
-        return appContext
-    }
+    override fun query(uri: Uri, projection: Array<out String>?, selection: String?, 
+                      selectionArgs: Array<out String>?, sortOrder: String?): Cursor? = null
+    
+    override fun getType(uri: Uri): String? = null
+    
+    override fun insert(uri: Uri, values: ContentValues?): Uri? = null
+    
+    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
+    
+    override fun update(uri: Uri, values: ContentValues?, selection: String?, 
+                       selectionArgs: Array<out String>?): Int = 0
 }

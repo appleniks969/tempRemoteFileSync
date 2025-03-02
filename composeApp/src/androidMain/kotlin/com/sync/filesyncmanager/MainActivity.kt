@@ -10,17 +10,6 @@ import com.sync.filesyncmanager.domain.SyncStrategy
 import com.sync.filesyncmanager.viewmodel.FileSyncViewModel
 import kotlinx.coroutines.launch
 
-
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.viewModels
-import androidx.lifecycle.lifecycleScope
-import com.sync.filesyncmanager.domain.SyncConfig
-import com.sync.filesyncmanager.domain.SyncStrategy
-import com.sync.filesyncmanager.viewmodel.FileSyncViewModel
-import kotlinx.coroutines.launch
-
 class MainActivity : ComponentActivity() {
     private val viewModel: FileSyncViewModel by viewModels()
 

@@ -357,9 +357,9 @@ expect class SyncScheduler() {
 }
 
 /**
- * Cross-platform ZIP service
+ * Helper class for handling ZIP operations within FileService
  */
-class ZipService(private val fileSystem: FileSystem, val fileService: FileService) {
+class ZipUtility(private val fileSystem: FileSystem, val fileService: FileService) {
 
     /**
      * Extracts a ZIP file to a destination directory
@@ -373,8 +373,9 @@ class ZipService(private val fileSystem: FileSystem, val fileService: FileServic
             // Ensure destination directory exists
             fileService.createDirectory(destDirPath)
 
-            // Platform-specific unzipping implementation
-            val success = unzipImpl(zipFilePath, destDirPath)
+            // Use platform ZipService for extraction
+            val zipService = ZipService()
+            val success = zipService.extractZip(zipFilePath, destDirPath, false)
 
             if (success) destDirPath else null
         } catch (e: Exception) {
@@ -389,11 +390,6 @@ class ZipService(private val fileSystem: FileSystem, val fileService: FileServic
         return filePath.lowercase().endsWith(".zip")
     }
 }
-
-internal expect suspend fun ZipService.unzipImpl(
-    zipFilePath: String,
-    destDirPath: String
-): Boolean
 
 /**
  * Platform-specific functions for file access
