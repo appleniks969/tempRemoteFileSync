@@ -9,7 +9,6 @@ import com.sync.filesyncmanager.util.FileUtils
  * Application class that initializes the FileSyncManager's platform-specific components
  */
 class FileSyncApplication : Application() {
-
     override fun onCreate() {
         super.onCreate()
 
@@ -23,7 +22,7 @@ class FileSyncApplication : Application() {
 
         // Initialize DataStore
         DataStoreProvider.initialize(this)
-        
+
         // Initialize FileUtils
         FileUtils.initialize(this)
 

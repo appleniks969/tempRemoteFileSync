@@ -11,14 +11,14 @@ object DatabaseFactory {
     private var database: FileSyncDatabase? = null
 
     fun initialize(context: Context) {
-        database = Room.databaseBuilder(
-            context.applicationContext,
-            FileSyncDatabase::class.java,
-            "file_sync_database"
-        ).build()
+        database =
+            Room
+                .databaseBuilder(
+                    context.applicationContext,
+                    FileSyncDatabase::class.java,
+                    "file_sync_database",
+                ).build()
     }
 
-    fun getDatabase(): FileSyncDatabase {
-        return database ?: throw IllegalStateException("Database not initialized")
-    }
+    fun getDatabase(): FileSyncDatabase = database ?: throw IllegalStateException("Database not initialized")
 }

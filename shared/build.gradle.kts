@@ -51,11 +51,16 @@ kotlin {
     // Kotlin Gradle Plugin creates additional source sets that depend on each other, since it is
     // common to share sources between related targets.
     // See: https://kotlinlang.org/docs/multiplatform-hierarchy.html
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions {
+            freeCompilerArgs += "-Xexpect-actual-classes"
+        }
+    }
+
     sourceSets {
         all {
             languageSettings.optIn("kotlin.experimental.ExperimentalObjCName")
         }
-
         commonMain {
             dependencies {
                 implementation(libs.kotlin.stdlib)
@@ -65,7 +70,7 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.serialization.kotlinx.json)
-                implementation("io.ktor:ktor-client-plugins:${libs.versions.ktorVersion.get()}")
+                // Remove direct reference to ktor-client-plugins
                 implementation(libs.skie.annotations)
                 implementation(libs.androidx.lifecycle.viewmodel)
                 implementation(libs.androidx.paging.common)

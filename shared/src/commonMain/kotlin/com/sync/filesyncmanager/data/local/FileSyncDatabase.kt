@@ -7,7 +7,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 
 /**
- * Room database definition for KMP
+ * Common interface for the database implementation across platforms
+ * This allows us to have a clean separation between platforms while
+ * maintaining a consistent API
+ */
+interface IFileSyncDatabase {
+    fun fileMetadataDao(): FileMetadataDao
+}
+
+/**
+ * Room database definition for Android
  */
 @Database(
     entities = [FileMetadata::class],
@@ -15,9 +24,7 @@ import kotlinx.datetime.Instant
     exportSchema = true
 )
 @TypeConverters(FileSyncTypeConverters::class)
-abstract class FileSyncDatabase : RoomDatabase() {
-    abstract fun fileMetadataDao(): FileMetadataDao
-
+abstract class FileSyncDatabase : RoomDatabase(), IFileSyncDatabase {
     companion object {
         // Database name for both platforms
         const val DATABASE_NAME = "file_sync_database"
@@ -117,5 +124,5 @@ expect object DatabaseProvider {
     /**
      * Creates or returns the database instance
      */
-    fun getDatabase(): FileSyncDatabase
+    fun getDatabase(): IFileSyncDatabase
 }

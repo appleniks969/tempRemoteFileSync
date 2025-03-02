@@ -1,6 +1,5 @@
 package com.sync.filesyncmanager.util
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import okio.Buffer
@@ -12,29 +11,35 @@ import okio.Path.Companion.toPath
 /**
  * Cross-platform file service built with Okio
  */
-class FileService(private val fileSystem: FileSystem) {
-
+class FileService(
+    private val fileSystem: FileSystem,
+) {
     /**
      * Reads a file from the given path
      */
-    suspend fun readFile(path: String): ByteArray? = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            if (!fileSystem.exists(okioPath)) return@withContext null
+    suspend fun readFile(path: String): ByteArray? =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                if (!fileSystem.exists(okioPath)) return@withContext null
 
-            fileSystem.read(okioPath) {
-                readByteArray()
+                fileSystem.read(okioPath) {
+                    readByteArray()
+                }
+            } catch (e: Exception) {
+                println("Error reading file: ${e.message}")
+                null
             }
-        } catch (e: Exception) {
-            null
         }
-    }
 
     /**
      * Writes data to a file at the given path
      */
-    suspend fun writeFile(path: String, data: ByteArray): Boolean =
-        withContext(Dispatchers.Default) {
+    suspend fun writeFile(
+        path: String,
+        data: ByteArray,
+    ): Boolean =
+        withContext(IODispatcher) {
             try {
                 val okioPath = path.toOkioPath()
 
@@ -50,6 +55,7 @@ class FileService(private val fileSystem: FileSystem) {
                 }
                 true
             } catch (e: Exception) {
+                println("Error writing file: ${e.message}")
                 false
             }
         }
@@ -57,102 +63,117 @@ class FileService(private val fileSystem: FileSystem) {
     /**
      * Deletes a file at the given path
      */
-    suspend fun deleteFile(path: String): Boolean = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            if (fileSystem.exists(okioPath)) {
-                fileSystem.delete(okioPath)
-                true
-            } else {
-                true // Consider it a success if the file already doesn't exist
+    suspend fun deleteFile(path: String): Boolean =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                if (fileSystem.exists(okioPath)) {
+                    fileSystem.delete(okioPath)
+                    true
+                } else {
+                    true // Consider it a success if the file already doesn't exist
+                }
+            } catch (e: Exception) {
+                println("Error deleting file: ${e.message}")
+                false
             }
-        } catch (e: Exception) {
-            false
         }
-    }
 
     /**
      * Checks if a file exists at the given path
      */
-    suspend fun fileExists(path: String): Boolean = withContext(Dispatchers.Default) {
-        try {
-            fileSystem.exists(path.toOkioPath())
-        } catch (e: Exception) {
-            false
+    suspend fun fileExists(path: String): Boolean =
+        withContext(IODispatcher) {
+            try {
+                fileSystem.exists(path.toOkioPath())
+            } catch (e: Exception) {
+                println("Error checking if file exists: ${e.message}")
+                false
+            }
         }
-    }
 
     /**
      * Creates a directory at the given path
      */
-    suspend fun createDirectory(path: String): Boolean = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            fileSystem.createDirectories(okioPath)
-            true
-        } catch (e: Exception) {
-            false
+    suspend fun createDirectory(path: String): Boolean =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                fileSystem.createDirectories(okioPath)
+                true
+            } catch (e: Exception) {
+                println("Error creating directory: ${e.message}")
+                false
+            }
         }
-    }
 
     /**
      * Gets the size of a file in bytes
      */
-    suspend fun getFileSize(path: String): Long = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            if (fileSystem.exists(okioPath)) {
-                fileSystem.metadata(okioPath).size ?: -1L
-            } else {
+    suspend fun getFileSize(path: String): Long =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                if (fileSystem.exists(okioPath)) {
+                    fileSystem.metadata(okioPath).size ?: -1L
+                } else {
+                    -1L
+                }
+            } catch (e: Exception) {
+                println("Error getting file size: ${e.message}")
                 -1L
             }
-        } catch (e: Exception) {
-            -1L
         }
-    }
 
     /**
      * Gets the last modified timestamp of a file
      */
-    suspend fun getLastModified(path: String): Instant? = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            if (fileSystem.exists(okioPath)) {
-                val modifiedAtMillis = fileSystem.metadata(okioPath).lastModifiedAtMillis
-                if (modifiedAtMillis != null) {
-                    Instant.fromEpochMilliseconds(modifiedAtMillis)
+    suspend fun getLastModified(path: String): Instant? =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                if (fileSystem.exists(okioPath)) {
+                    val modifiedAtMillis = fileSystem.metadata(okioPath).lastModifiedAtMillis
+                    if (modifiedAtMillis != null) {
+                        Instant.fromEpochMilliseconds(modifiedAtMillis)
+                    } else {
+                        null
+                    }
                 } else {
                     null
                 }
-            } else {
+            } catch (e: Exception) {
+                println("Error getting last modified time: ${e.message}")
                 null
             }
-        } catch (e: Exception) {
-            null
         }
-    }
 
     /**
      * Lists all files in a directory
      */
-    suspend fun listFiles(path: String): List<String> = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            if (fileSystem.exists(okioPath) && fileSystem.metadata(okioPath).isDirectory) {
-                fileSystem.list(okioPath).map { it.toString() }
-            } else {
+    suspend fun listFiles(path: String): List<String> =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                if (fileSystem.exists(okioPath) && fileSystem.metadata(okioPath).isDirectory) {
+                    fileSystem.list(okioPath).map { it.toString() }
+                } else {
+                    emptyList()
+                }
+            } catch (e: Exception) {
+                println("Error listing files: ${e.message}")
                 emptyList()
             }
-        } catch (e: Exception) {
-            emptyList()
         }
-    }
 
     /**
      * Moves a file from one path to another
      */
-    suspend fun moveFile(fromPath: String, toPath: String): Boolean =
-        withContext(Dispatchers.Default) {
+    suspend fun moveFile(
+        fromPath: String,
+        toPath: String,
+    ): Boolean =
+        withContext(IODispatcher) {
             try {
                 val source = fromPath.toOkioPath()
                 val target = toPath.toOkioPath()
@@ -170,6 +191,7 @@ class FileService(private val fileSystem: FileSystem) {
                     false
                 }
             } catch (e: Exception) {
+                println("Error moving file: ${e.message}")
                 false
             }
         }
@@ -177,8 +199,11 @@ class FileService(private val fileSystem: FileSystem) {
     /**
      * Copies a file from one path to another
      */
-    suspend fun copyFile(fromPath: String, toPath: String): Boolean =
-        withContext(Dispatchers.Default) {
+    suspend fun copyFile(
+        fromPath: String,
+        toPath: String,
+    ): Boolean =
+        withContext(IODispatcher) {
             try {
                 val source = fromPath.toOkioPath()
                 val target = toPath.toOkioPath()
@@ -196,6 +221,7 @@ class FileService(private val fileSystem: FileSystem) {
                     false
                 }
             } catch (e: Exception) {
+                println("Error copying file: ${e.message}")
                 false
             }
         }
@@ -203,164 +229,111 @@ class FileService(private val fileSystem: FileSystem) {
     /**
      * Calculates the MD5 checksum of a file
      */
-    suspend fun calculateChecksum(path: String): String? = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            if (!fileSystem.exists(okioPath)) return@withContext null
+    suspend fun calculateChecksum(path: String): String? =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                if (!fileSystem.exists(okioPath)) return@withContext null
 
-            fileSystem.read(okioPath) {
-                val hashingSink = HashingSink.md5(Buffer())
-                val buffer = Buffer()
-                var bytesRead: Long
+                fileSystem.read(okioPath) {
+                    val hashingSink = HashingSink.md5(Buffer())
+                    val buffer = Buffer()
+                    var bytesRead: Long
 
-                while (true) {
-                    bytesRead = read(buffer, 8192L)
-                    if (bytesRead <= 0) break
+                    while (true) {
+                        bytesRead = read(buffer, 8192L)
+                        if (bytesRead <= 0) break
 
-                    hashingSink.write(buffer, bytesRead)
+                        hashingSink.write(buffer, bytesRead)
+                    }
+
+                    hashingSink.hash.hex()
                 }
-
-                hashingSink.hash.hex()
+            } catch (e: Exception) {
+                println("Error calculating checksum: ${e.message}")
+                null
             }
-        } catch (e: Exception) {
-            null
         }
-    }
 
     /**
      * Gets the total size of all files in a directory
      */
-    suspend fun getTotalDirectorySize(path: String): Long = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            if (!fileSystem.exists(okioPath)) return@withContext 0L
+    suspend fun getTotalDirectorySize(path: String): Long =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                if (!fileSystem.exists(okioPath)) return@withContext 0L
 
-            var totalSize = 0L
+                var totalSize = 0L
 
-            fun calculateSize(dir: Path) {
-                fileSystem.list(dir).forEach { subPath ->
-                    val metadata = fileSystem.metadata(subPath)
-                    if (metadata.isDirectory) {
-                        calculateSize(subPath)
-                    } else {
-                        totalSize += metadata.size ?: 0L
+                fun calculateSize(dir: Path) {
+                    fileSystem.list(dir).forEach { subPath ->
+                        val metadata = fileSystem.metadata(subPath)
+                        if (metadata.isDirectory) {
+                            calculateSize(subPath)
+                        } else {
+                            totalSize += metadata.size ?: 0L
+                        }
                     }
                 }
-            }
 
-            if (fileSystem.metadata(okioPath).isDirectory) {
-                calculateSize(okioPath)
-            } else {
-                totalSize = fileSystem.metadata(okioPath).size ?: 0L
-            }
+                if (fileSystem.metadata(okioPath).isDirectory) {
+                    calculateSize(okioPath)
+                } else {
+                    totalSize = fileSystem.metadata(okioPath).size ?: 0L
+                }
 
-            totalSize
-        } catch (e: Exception) {
-            0L
+                totalSize
+            } catch (e: Exception) {
+                println("Error getting directory size: ${e.message}")
+                0L
+            }
         }
-    }
 
     /**
      * Clears a directory by deleting all files
      */
-    suspend fun clearDirectory(path: String): Boolean = withContext(Dispatchers.Default) {
-        try {
-            val okioPath = path.toOkioPath()
-            if (!fileSystem.exists(okioPath)) return@withContext true
+    suspend fun clearDirectory(path: String): Boolean =
+        withContext(IODispatcher) {
+            try {
+                val okioPath = path.toOkioPath()
+                if (!fileSystem.exists(okioPath)) return@withContext true
 
-            if (fileSystem.metadata(okioPath).isDirectory) {
-                fileSystem.list(okioPath).forEach { subPath ->
-                    val metadata = fileSystem.metadata(subPath)
-                    if (metadata.isDirectory) {
-                        clearDirectory(subPath.toString())
-                        fileSystem.deleteRecursively(subPath)
-                    } else {
-                        fileSystem.delete(subPath)
+                if (fileSystem.metadata(okioPath).isDirectory) {
+                    fileSystem.list(okioPath).forEach { subPath ->
+                        val metadata = fileSystem.metadata(subPath)
+                        if (metadata.isDirectory) {
+                            clearDirectory(subPath.toString())
+                            fileSystem.deleteRecursively(subPath)
+                        } else {
+                            fileSystem.delete(subPath)
+                        }
                     }
+                    true
+                } else {
+                    false
                 }
-                true
-            } else {
+            } catch (e: Exception) {
+                println("Error clearing directory: ${e.message}")
                 false
             }
-        } catch (e: Exception) {
-            false
         }
-    }
 
     /**
      * Helper extension to convert a String path to an Okio Path
      */
-    private fun String.toOkioPath(): Path {
-        return this.toPath()
-    }
+    private fun String.toOkioPath(): Path = this.toPath()
 }
 
-/**
- * Platform-specific network monitoring
- */
-expect class NetworkMonitor() {
-    /**
-     * Checks if any network is available
-     */
-    suspend fun isNetworkAvailable(): Boolean
-
-    /**
-     * Checks if WiFi is available
-     */
-    suspend fun isWifiAvailable(): Boolean
-
-    /**
-     * Checks if an unmetered connection is available
-     */
-    suspend fun isUnmeteredNetworkAvailable(): Boolean
-}
-
-/**
- * Platform-specific scheduler for periodic tasks
- */
-expect class SyncScheduler() {
-    /**
-     * Task identifier for background operations
-     */
-    val SYNC_TASK_IDENTIFIER: String
-
-    /**
-     * Schedules a periodic task
-     * @param intervalMs The interval in milliseconds
-     * @param action The action to perform
-     */
-    suspend fun schedulePeriodic(intervalMs: Long, action: suspend () -> Unit)
-
-    /**
-     * Schedules a one-time task with delay
-     * @param delayMs The delay in milliseconds
-     * @param action The action to perform
-     */
-    suspend fun scheduleOnce(delayMs: Long, action: suspend () -> Unit)
-
-    /**
-     * Cancels all scheduled tasks
-     */
-    fun cancel()
-
-    /**
-     * Submits a background task request
-     * Available on iOS but no-op on Android
-     */
-    fun submitBackgroundTask()
-
-    /**
-     * Registers task handlers
-     * Available on iOS but no-op on Android
-     */
-    fun registerTasks()
-}
+// NetworkMonitor and SyncScheduler are now defined in their own files
 
 /**
  * Helper class for handling ZIP operations within FileService
  */
-class ZipUtility(private val fileSystem: FileSystem, val fileService: FileService) {
-
+class ZipUtility(
+    private val fileSystem: FileSystem,
+    val fileService: FileService,
+) {
     /**
      * Extracts a ZIP file to a destination directory
      *
@@ -368,32 +341,56 @@ class ZipUtility(private val fileSystem: FileSystem, val fileService: FileServic
      * @param destDirPath Path to the destination directory
      * @return Path to the extracted directory or null if extraction failed
      */
-    suspend fun unzip(zipFilePath: String, destDirPath: String): String? = withContext(Dispatchers.Default) {
-        try {
-            // Ensure destination directory exists
-            fileService.createDirectory(destDirPath)
+    suspend fun unzip(
+        zipFilePath: String,
+        destDirPath: String,
+    ): String? =
+        withContext(IODispatcher) {
+            try {
+                // Ensure destination directory exists
+                fileService.createDirectory(destDirPath)
 
-            // Use platform ZipService for extraction
-            val zipService = ZipService()
-            val success = zipService.extractZip(zipFilePath, destDirPath, false)
+                // Use platform ZipService for extraction
+                val zipService = ZipService()
+                val success = zipService.extractZip(zipFilePath, destDirPath, false)
 
-            if (success) destDirPath else null
-        } catch (e: Exception) {
-            null
+                if (success) destDirPath else null
+            } catch (e: Exception) {
+                println("Error unzipping file: ${e.message}")
+                null
+            }
         }
-    }
+
+    /**
+     * Creates a ZIP file from a directory
+     *
+     * @param directoryPath Path to the directory to zip
+     * @param zipFilePath Path for the output ZIP file
+     * @return Path to the created ZIP file or null if creation failed
+     */
+    suspend fun createZip(
+        directoryPath: String,
+        zipFilePath: String,
+    ): String? =
+        withContext(IODispatcher) {
+            try {
+                // Use platform ZipService for compression
+                val zipService = ZipService()
+                val success = zipService.createZip(directoryPath, zipFilePath)
+
+                if (success) zipFilePath else null
+            } catch (e: Exception) {
+                println("Error creating zip file: ${e.message}")
+                null
+            }
+        }
 
     /**
      * Checks if a file is a ZIP file based on its extension
      */
-    fun isZipFile(filePath: String): Boolean {
-        return filePath.lowercase().endsWith(".zip")
-    }
+    fun isZipFile(filePath: String): Boolean = filePath.lowercase().endsWith(".zip")
 }
 
 /**
- * Platform-specific functions for file access
+ * Platform-specific functions for file access are defined in FileExpect.kt
  */
-internal expect fun getPlatformCacheDir(): String
-
-internal expect fun getPlatformFilesDir(): String

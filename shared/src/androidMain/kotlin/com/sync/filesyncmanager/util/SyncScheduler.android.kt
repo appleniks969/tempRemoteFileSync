@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 actual class SyncScheduler actual constructor() {
     actual val SYNC_TASK_IDENTIFIER: String = "com.sync.filesyncmanager.SYNC_TASK"
 
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(IODispatcher + SupervisorJob())
     private var periodicJob: Job? = null
 
     actual suspend fun schedulePeriodic(intervalMs: Long, action: suspend () -> Unit) {

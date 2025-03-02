@@ -11,11 +11,11 @@ import androidx.datastore.preferences.preferencesDataStore
 object DataStoreProvider {
     private lateinit var appContext: Context
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "sync_config")
-    
+
     fun initialize(context: Context) {
         appContext = context.applicationContext
     }
-    
+
     fun getDataStore(): DataStore<Preferences> {
         if (!::appContext.isInitialized) {
             throw IllegalStateException("DataStoreProvider not initialized")

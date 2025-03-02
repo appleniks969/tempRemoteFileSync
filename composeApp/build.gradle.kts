@@ -18,7 +18,7 @@ android {
     buildFeatures {
         compose = true
     }
-    
+
     // Fix for multiple manifest files issue
     sourceSets {
         getByName("main") {
@@ -28,7 +28,7 @@ android {
             java.srcDirs("src/androidMain/kotlin")
         }
     }
-    
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -73,7 +73,7 @@ dependencies {
     implementation(libs.androidx.paging.compose.android)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     debugImplementation(libs.compose.ui.tooling)
-    
+
     // Add missing dependencies
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
@@ -87,7 +87,7 @@ dependencies {
     implementation("io.ktor:ktor-client-core-jvm:${libs.versions.ktorVersion.get()}")
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation("com.squareup.okio:okio:3.6.0")
-    
+
     // For preview
     implementation("org.jetbrains.compose.ui:ui-tooling-preview:1.6.0")
 }

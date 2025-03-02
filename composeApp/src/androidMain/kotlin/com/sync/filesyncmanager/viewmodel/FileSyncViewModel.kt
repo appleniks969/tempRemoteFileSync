@@ -60,11 +60,12 @@ class FileSyncViewModel : ViewModel() {
 
             syncManager?.let { manager ->
                 manager.syncAll().collect { result ->
-                    _syncState.value = when {
-                        result.failedCount > 0 -> SyncState.Error("Failed to sync ${result.failedCount} files")
-                        result.conflictCount > 0 -> SyncState.Conflict("${result.conflictCount} files have conflicts")
-                        else -> SyncState.Success("Successfully synced ${result.successCount} files")
-                    }
+                    _syncState.value =
+                        when {
+                            result.failedCount > 0 -> SyncState.Error("Failed to sync ${result.failedCount} files")
+                            result.conflictCount > 0 -> SyncState.Conflict("${result.conflictCount} files have conflicts")
+                            else -> SyncState.Success("Successfully synced ${result.successCount} files")
+                        }
                 }
             } ?: run {
                 _syncState.value = SyncState.Error("FileSyncManager not initialized")
@@ -75,32 +76,38 @@ class FileSyncViewModel : ViewModel() {
     /**
      * Add a file to be synced
      */
-    fun addFile(localPath: String, remoteUrl: String) {
+    fun addFileByName(
+        fileName: String,
+        remoteUrl: String,
+    ) {
         viewModelScope.launch {
             _syncState.value = SyncState.Syncing
 
             syncManager?.let { manager ->
-                // Create file metadata from the paths
-                val fileName = localPath.substringAfterLast('/')
+                // Generate file ID and create metadata
                 val fileId = generateFileId(fileName)
 
-                val metadata = FileMetadata(
-                    fileId = fileId,
-                    fileName = fileName,
-                    filePath = localPath,
-                    remoteUrl = remoteUrl,
-                    lastModified = kotlinx.datetime.Clock.System.now(),
-                    fileSize = -1, // Will be updated when file is read
-                    syncStatus = com.sync.filesyncmanager.domain.SyncStatus.PENDING
-                )
+                val metadata =
+                    FileMetadata(
+                        fileId = fileId,
+                        fileName = fileName,
+                        filePath = "", // Will be auto-generated during download
+                        remoteUrl = remoteUrl,
+                        lastModified =
+                            kotlinx.datetime.Clock.System
+                                .now(),
+                        fileSize = -1, // Will be updated when file is downloaded
+                        syncStatus = com.sync.filesyncmanager.domain.SyncStatus.PENDING,
+                    )
 
                 val result = manager.addFile(metadata, true)
 
-                _syncState.value = when (result) {
-                    is SyncResult.Success -> SyncState.Success("File added successfully")
-                    is SyncResult.Error -> SyncState.Error(result.errorMessage)
-                    is SyncResult.Conflict -> SyncState.Conflict("File has conflicts")
-                }
+                _syncState.value =
+                    when (result) {
+                        is SyncResult.Success -> SyncState.Success("File added successfully")
+                        is SyncResult.Error -> SyncState.Error(result.errorMessage)
+                        is SyncResult.Conflict -> SyncState.Conflict("File has conflicts")
+                    }
             } ?: run {
                 _syncState.value = SyncState.Error("FileSyncManager not initialized")
             }
@@ -171,18 +178,27 @@ class FileSyncViewModel : ViewModel() {
     /**
      * Generate a file ID from a filename
      */
-    private fun generateFileId(fileName: String): String {
-        return "file_${System.currentTimeMillis()}_${fileName.replace("[^a-zA-Z0-9]".toRegex(), "_")}"
-    }
+    private fun generateFileId(fileName: String): String =
+        "file_${System.currentTimeMillis()}_${fileName.replace("[^a-zA-Z0-9]".toRegex(), "_")}"
 
     /**
      * States for sync operations
      */
     sealed class SyncState {
         object Initial : SyncState()
+
         object Syncing : SyncState()
-        data class Success(val message: String) : SyncState()
-        data class Error(val message: String) : SyncState()
-        data class Conflict(val message: String) : SyncState()
+
+        data class Success(
+            val message: String,
+        ) : SyncState()
+
+        data class Error(
+            val message: String,
+        ) : SyncState()
+
+        data class Conflict(
+            val message: String,
+        ) : SyncState()
     }
 }

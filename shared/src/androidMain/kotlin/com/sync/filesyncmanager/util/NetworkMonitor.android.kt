@@ -6,7 +6,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.annotation.RequiresPermission
 import com.sync.filesyncmanager.AppContextProvider
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
@@ -21,26 +20,29 @@ actual class NetworkMonitor {
     }
 
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
-    actual suspend fun isNetworkAvailable(): Boolean = withContext(Dispatchers.IO) {
-        val network = connectivityManager.activeNetwork ?: return@withContext false
-        val capabilities =
-            connectivityManager.getNetworkCapabilities(network) ?: return@withContext false
-        return@withContext capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
+    actual suspend fun isNetworkAvailable(): Boolean =
+        withContext(IODispatcher) {
+            val network = connectivityManager.activeNetwork ?: return@withContext false
+            val capabilities =
+                connectivityManager.getNetworkCapabilities(network) ?: return@withContext false
+            return@withContext capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
 
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
-    actual suspend fun isWifiAvailable(): Boolean = withContext(Dispatchers.IO) {
-        val network = connectivityManager.activeNetwork ?: return@withContext false
-        val capabilities =
-            connectivityManager.getNetworkCapabilities(network) ?: return@withContext false
-        return@withContext capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-    }
+    actual suspend fun isWifiAvailable(): Boolean =
+        withContext(IODispatcher) {
+            val network = connectivityManager.activeNetwork ?: return@withContext false
+            val capabilities =
+                connectivityManager.getNetworkCapabilities(network) ?: return@withContext false
+            return@withContext capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        }
 
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
-    actual suspend fun isUnmeteredNetworkAvailable(): Boolean = withContext(Dispatchers.IO) {
-        val network = connectivityManager.activeNetwork ?: return@withContext false
-        val capabilities =
-            connectivityManager.getNetworkCapabilities(network) ?: return@withContext false
-        return@withContext capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-    }
+    actual suspend fun isUnmeteredNetworkAvailable(): Boolean =
+        withContext(IODispatcher) {
+            val network = connectivityManager.activeNetwork ?: return@withContext false
+            val capabilities =
+                connectivityManager.getNetworkCapabilities(network) ?: return@withContext false
+            return@withContext capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+        }
 }

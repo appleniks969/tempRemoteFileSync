@@ -1,15 +1,40 @@
 package com.sync.filesyncmanager
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,38 +47,40 @@ import com.sync.filesyncmanager.viewmodel.FileSyncViewModel
 import kotlinx.datetime.Instant
 
 @Composable
-fun App(viewModel: FileSyncViewModel?) {
+fun app(viewModel: FileSyncViewModel?) {
     MaterialTheme {
-        val syncState by viewModel?.syncState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(FileSyncViewModel.SyncState.Initial) }
+        val syncState by viewModel?.syncState?.collectAsStateWithLifecycle()
+            ?: remember { mutableStateOf(FileSyncViewModel.SyncState.Initial) }
         val filesList by viewModel?.filesList?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList()) }
         val config by viewModel?.config?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
-        
+
         var showAddDialog by remember { mutableStateOf(false) }
-        
+
         Scaffold(
             topBar = {
                 // Use a simple Box with Row instead of the experimental TopAppBar
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFF6200EE))
-                        .padding(16.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF6200EE))
+                            .padding(16.dp),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             "File Sync Manager",
                             color = Color.White,
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleLarge,
                         )
                         IconButton(onClick = { viewModel?.syncFiles() }) {
                             Icon(
                                 Icons.Default.Sync,
                                 contentDescription = "Sync files",
-                                tint = Color.White
+                                tint = Color.White,
                             )
                         }
                     }
@@ -63,24 +90,26 @@ fun App(viewModel: FileSyncViewModel?) {
                 FloatingActionButton(onClick = { showAddDialog = true }) {
                     Text("+")
                 }
-            }
+            },
         ) { padding ->
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp),
             ) {
                 // Status card
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Sync Status",
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleLarge,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         when (syncState) {
@@ -91,7 +120,7 @@ fun App(viewModel: FileSyncViewModel?) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
+                                        strokeWidth = 2.dp,
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text("Syncing files...")
@@ -100,23 +129,23 @@ fun App(viewModel: FileSyncViewModel?) {
                             is FileSyncViewModel.SyncState.Success -> {
                                 Text(
                                     (syncState as FileSyncViewModel.SyncState.Success).message,
-                                    color = Color.Green
+                                    color = Color.Green,
                                 )
                             }
                             is FileSyncViewModel.SyncState.Error -> {
                                 Text(
                                     (syncState as FileSyncViewModel.SyncState.Error).message,
-                                    color = Color.Red
+                                    color = Color.Red,
                                 )
                             }
                             is FileSyncViewModel.SyncState.Conflict -> {
                                 Text(
                                     (syncState as FileSyncViewModel.SyncState.Conflict).message,
-                                    color = Color.Yellow
+                                    color = Color.Yellow,
                                 )
                             }
                         }
-                        
+
                         config?.let {
                             Spacer(modifier = Modifier.height(8.dp))
                             Divider()
@@ -126,43 +155,44 @@ fun App(viewModel: FileSyncViewModel?) {
                         }
                     }
                 }
-                
+
                 // Files list
                 Text(
                     text = "Files",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
-                
+
                 if (filesList.isEmpty()) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text("No files to sync")
                     }
                 } else {
                     LazyColumn {
                         items(filesList) { file ->
-                            FileItem(
+                            fileItem(
                                 file = file,
                                 onDownload = { viewModel?.downloadFile(file.fileId) },
-                                onUpload = { viewModel?.uploadFile(file.fileId) }
+                                onUpload = { viewModel?.uploadFile(file.fileId) },
                             )
                         }
                     }
                 }
             }
-            
+
             if (showAddDialog) {
-                AddFileDialog(
+                addFileDialog(
                     onDismiss = { showAddDialog = false },
-                    onAddFile = { localPath, remoteUrl ->
-                        viewModel?.addFile(localPath, remoteUrl)
+                    onAddFile = { fileName, remoteUrl ->
+                        viewModel?.addFileByName(fileName, remoteUrl)
                         showAddDialog = false
-                    }
+                    },
                 )
             }
         }
@@ -170,55 +200,57 @@ fun App(viewModel: FileSyncViewModel?) {
 }
 
 @Composable
-fun FileItem(
+fun fileItem(
     file: FileMetadata,
     onDownload: () -> Unit,
-    onUpload: () -> Unit
+    onUpload: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = file.fileName,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Status: ${file.syncStatus.name}",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
                 )
                 Text(
                     text = "Path: ${file.filePath}",
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-            
+
             Row {
                 IconButton(onClick = onDownload) {
                     Icon(
                         Icons.Default.CloudDownload,
                         contentDescription = "Download",
-                        tint = if (!file.isDownloaded) Color.Blue else Color.Gray
+                        tint = if (!file.isDownloaded) Color.Blue else Color.Gray,
                     )
                 }
                 IconButton(onClick = onUpload) {
                     Icon(
                         Icons.Default.CloudUpload,
                         contentDescription = "Upload",
-                        tint = if (!file.isUploaded) Color.Blue else Color.Gray
+                        tint = if (!file.isUploaded) Color.Blue else Color.Gray,
                     )
                 }
             }
@@ -227,37 +259,37 @@ fun FileItem(
 }
 
 @Composable
-fun AddFileDialog(
+fun addFileDialog(
     onDismiss: () -> Unit,
-    onAddFile: (String, String) -> Unit
+    onAddFile: (String, String) -> Unit,
 ) {
-    var localPath by remember { mutableStateOf("") }
+    var fileName by remember { mutableStateOf("") }
     var remoteUrl by remember { mutableStateOf("") }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add File") },
         text = {
             Column {
                 OutlinedTextField(
-                    value = localPath,
-                    onValueChange = { localPath = it },
-                    label = { Text("Local File Path") },
-                    modifier = Modifier.fillMaxWidth()
+                    value = fileName,
+                    onValueChange = { fileName = it },
+                    label = { Text("File Name") },
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = remoteUrl,
                     onValueChange = { remoteUrl = it },
                     label = { Text("Remote URL") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
         confirmButton = {
             Button(
-                onClick = { onAddFile(localPath, remoteUrl) },
-                enabled = localPath.isNotBlank() && remoteUrl.isNotBlank()
+                onClick = { onAddFile(fileName, remoteUrl) },
+                enabled = fileName.isNotBlank() && remoteUrl.isNotBlank(),
             ) {
                 Text("Add")
             }
@@ -266,28 +298,29 @@ fun AddFileDialog(
             Button(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }
 
 // Preview is removed since it's not available
 @Composable
-fun FileItemPreview() {
+fun fileItemPreview() {
     MaterialTheme {
-        FileItem(
-            file = FileMetadata(
-                fileId = "file1",
-                fileName = "example.txt",
-                filePath = "/path/to/example.txt",
-                remoteUrl = "https://example.com/files/example.txt",
-                lastModified = Instant.parse("2023-01-01T00:00:00Z"),
-                fileSize = 1024,
-                syncStatus = SyncStatus.SYNCED,
-                isDownloaded = true,
-                isUploaded = true
-            ),
+        fileItem(
+            file =
+                FileMetadata(
+                    fileId = "file1",
+                    fileName = "example.txt",
+                    filePath = "/path/to/example.txt",
+                    remoteUrl = "https://example.com/files/example.txt",
+                    lastModified = Instant.parse("2023-01-01T00:00:00Z"),
+                    fileSize = 1024,
+                    syncStatus = SyncStatus.SYNCED,
+                    isDownloaded = true,
+                    isUploaded = true,
+                ),
             onDownload = {},
-            onUpload = {}
+            onUpload = {},
         )
     }
 }

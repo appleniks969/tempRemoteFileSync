@@ -16,8 +16,6 @@ object AppContextProvider {
     fun initialize(context: Context) {
         _context = context.applicationContext
     }
-    
-    fun isInitialized(): Boolean {
-        return ::_context.isInitialized
-    }
+
+    fun isInitialized(): Boolean = ::_context.isInitialized
 }

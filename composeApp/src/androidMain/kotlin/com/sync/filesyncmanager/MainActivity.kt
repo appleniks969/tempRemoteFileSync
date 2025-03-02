@@ -21,24 +21,26 @@ class MainActivity : ComponentActivity() {
 
         // Set UI content immediately to avoid ANR
         setContent {
-            App(viewModel)
+            app(viewModel)
         }
 
         // Create an initial sync config
-        val initialConfig = SyncConfig(
-            baseUrl = "https://api.example.com/files", 
-            syncStrategy = SyncStrategy.BIDIRECTIONAL,
-            authToken = null // Add auth token if needed
-        )
+        val initialConfig =
+            SyncConfig(
+                baseUrl = "https://api.example.com/files",
+                syncStrategy = SyncStrategy.BIDIRECTIONAL,
+                authToken = null, // Add auth token if needed
+            )
 
         // Create exception handler
-        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-            // Log the error
-            throwable.printStackTrace()
-            
-            // Update the UI to show error
-            viewModel.clearState()
-        }
+        val exceptionHandler =
+            CoroutineExceptionHandler { _, throwable ->
+                // Log the error
+                throwable.printStackTrace()
+
+                // Update the UI to show error
+                viewModel.clearState()
+            }
 
         // Initialize the FileSyncManager in a coroutine
         lifecycleScope.launch(exceptionHandler) {
@@ -58,7 +60,7 @@ class MainActivity : ComponentActivity() {
             } catch (e: Exception) {
                 // Handle initialization error and log it
                 e.printStackTrace()
-                
+
                 // Clear the state to show initial state
                 viewModel.clearState()
             }
