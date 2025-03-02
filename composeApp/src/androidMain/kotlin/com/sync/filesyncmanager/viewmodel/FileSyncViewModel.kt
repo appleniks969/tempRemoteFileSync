@@ -6,9 +6,13 @@ import com.sync.filesyncmanager.api.FileSyncManager
 import com.sync.filesyncmanager.domain.FileMetadata
 import com.sync.filesyncmanager.domain.SyncConfig
 import com.sync.filesyncmanager.domain.SyncResult
+import com.sync.filesyncmanager.domain.SyncStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 /**
@@ -122,12 +126,21 @@ class FileSyncViewModel : ViewModel() {
             _syncState.value = SyncState.Syncing
 
             syncManager?.let { manager ->
-                manager.downloadFile(fileId, null).collect { progress ->
-                    if (progress.progress >= 1.0f) {
-                        _syncState.value = SyncState.Success("File downloaded successfully")
-                    } else if (progress.status == com.sync.filesyncmanager.domain.SyncStatus.FAILED) {
-                        _syncState.value = SyncState.Error("Download failed")
-                    }
+                try {
+                    manager
+                        .downloadFile(fileId, null)
+                        .flowOn(Dispatchers.IO)
+                        .catch { error ->
+                            _syncState.value = SyncState.Error("Download failed: ${error.message}")
+                        }.collect { progress ->
+                            if (progress.progress >= 1.0f) {
+                                _syncState.value = SyncState.Success("File downloaded successfully")
+                            } else if (progress.status == SyncStatus.FAILED) {
+                                _syncState.value = SyncState.Error("Download failed")
+                            }
+                        }
+                } catch (e: Exception) {
+                    _syncState.value = SyncState.Error("Download error: ${e.message}")
                 }
             } ?: run {
                 _syncState.value = SyncState.Error("FileSyncManager not initialized")

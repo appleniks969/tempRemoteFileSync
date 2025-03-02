@@ -24,10 +24,10 @@ class MainActivity : ComponentActivity() {
             app(viewModel)
         }
 
-        // Create an initial sync config
+        // Create an initial sync config with no baseUrl (should be provided by client)
         val initialConfig =
             SyncConfig(
-                baseUrl = "https://api.example.com/files",
+                baseUrl = "", // Will be set by client app
                 syncStrategy = SyncStrategy.BIDIRECTIONAL,
                 authToken = null, // Add auth token if needed
             )

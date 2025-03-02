@@ -18,6 +18,7 @@ import com.sync.filesyncmanager.domain.getPlatformFilesDir
 import com.sync.filesyncmanager.util.NetworkMonitor
 import com.sync.filesyncmanager.util.SyncScheduler
 import com.sync.filesyncmanager.util.ZipService
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +35,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import kotlinx.atomicfu.atomic
 
 /**
  * Interface for file synchronization operations
@@ -401,7 +401,7 @@ class FileSyncManagerImpl(
 
         private val failedFilesList = mutableListOf<Pair<String, String>>()
         private val failedFilesLock = Any()
-        val failedFiles: List<Pair<String, String>> 
+        val failedFiles: List<Pair<String, String>>
             get() = failedFilesList.toList()
 
         fun incrementSuccessCount() {

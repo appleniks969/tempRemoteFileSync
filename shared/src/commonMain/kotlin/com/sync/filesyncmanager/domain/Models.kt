@@ -95,7 +95,7 @@ data class FileMetadata(
  */
 @Serializable
 data class SyncConfig(
-    val baseUrl: String,
+    val baseUrl: String, // Should be provided by client for each file
     val syncStrategy: SyncStrategy = SyncStrategy.BIDIRECTIONAL,
     val cacheStrategy: CacheStrategy = CacheStrategy.CACHE_RECENT,
     val maxConcurrentTransfers: Int = 3,

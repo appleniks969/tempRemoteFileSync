@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.Intent
 import com.sync.filesyncmanager.FileSyncManagerFactory
 import com.sync.filesyncmanager.domain.PreferenceStorageFactory
-import com.sync.filesyncmanager.domain.SyncConfig
-import com.sync.filesyncmanager.domain.SyncStrategy
 import com.sync.filesyncmanager.util.SyncScheduler
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -34,10 +32,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
                         com.sync.filesyncmanager.domain
                             .ConfigRepository(preferenceStorage)
                     val config =
-                        configRepository.getSyncConfig() ?: SyncConfig(
-                            baseUrl = "https://api.example.com/files",
-                            syncStrategy = SyncStrategy.BIDIRECTIONAL,
-                        )
+                        configRepository.getSyncConfig()
 
                     // Initialize sync manager
                     val factory = FileSyncManagerFactory()

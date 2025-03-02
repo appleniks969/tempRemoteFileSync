@@ -53,7 +53,7 @@ Or integrate directly in your Xcode project through the Swift Package integratio
 // Initialize the sync manager
 val fileSyncManager = FileSyncManagerFactory().create(
     SyncConfig(
-        baseUrl = "https://api.example.com/files",
+        baseUrl = "your-api-endpoint", // Client-specific API endpoint
         authToken = "your-auth-token",
         syncStrategy = SyncStrategy.BIDIRECTIONAL,
         networkConstraint = NetworkConstraint.WIFI_ONLY
@@ -80,7 +80,7 @@ val downloadResult = fileSyncManager.downloadFile("document.pdf", "/path/to/loca
 // Initialize the sync manager
 let fileSyncManager = FileSyncManagerFactory().create(
     initialConfig: SyncConfig(
-        baseUrl: "https://api.example.com/files",
+        baseUrl: "your-api-endpoint", // Client-specific API endpoint
         authToken: "your-auth-token",
         syncStrategy: SyncStrategy.bidirectional,
         networkConstraint: NetworkConstraint.wifiOnly
@@ -107,7 +107,7 @@ fileSyncManager.downloadFile(remoteId: "document.pdf", localPath: "/path/to/loca
 
 ```kotlin
 val config = SyncConfig(
-    baseUrl = "https://api.example.com/files",
+    baseUrl = "your-api-endpoint", // Client-specific API endpoint
     authToken = "your-auth-token",
     syncStrategy = SyncStrategy.BIDIRECTIONAL,
     networkConstraint = NetworkConstraint.WIFI_ONLY,
