@@ -65,7 +65,7 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.serialization.kotlinx.json)
-                implementation("io.ktor:ktor-client-plugins:2.3.7")
+                implementation("io.ktor:ktor-client-plugins:${libs.versions.ktorVersion.get()}")
                 implementation(libs.skie.annotations)
                 implementation(libs.androidx.lifecycle.viewmodel)
                 implementation(libs.androidx.paging.common)

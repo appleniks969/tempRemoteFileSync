@@ -80,12 +80,12 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("io.ktor:ktor-client-core:2.3.6")
-    implementation("io.ktor:ktor-client-android:2.3.6")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.6")
-    implementation("io.ktor:ktor-client-plugins:2.3.6")
-    implementation("io.ktor:ktor-client-core-jvm:2.3.6")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation("io.ktor:ktor-client-plugins:${libs.versions.ktorVersion.get()}")
+    implementation("io.ktor:ktor-client-core-jvm:${libs.versions.ktorVersion.get()}")
+    implementation(libs.ktor.serialization.kotlinx.json)
     implementation("com.squareup.okio:okio:3.6.0")
     
     // For preview
