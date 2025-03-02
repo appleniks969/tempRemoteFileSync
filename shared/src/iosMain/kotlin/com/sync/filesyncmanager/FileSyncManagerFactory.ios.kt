@@ -15,6 +15,7 @@ import com.sync.filesyncmanager.util.SyncScheduler
 import com.sync.filesyncmanager.util.ZipService
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
@@ -80,6 +81,12 @@ actual class FileSyncManagerFactory {
         return HttpClient {
             install(ContentNegotiation) {
                 json(json)
+            }
+            
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60000  // 60 seconds for requests
+                connectTimeoutMillis = 15000  // 15 seconds for connection
+                socketTimeoutMillis = 60000   // 60 seconds for socket read/write
             }
         }
     }

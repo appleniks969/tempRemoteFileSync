@@ -3,6 +3,7 @@ package com.sync.filesyncmanager
 import android.app.Application
 import com.sync.filesyncmanager.data.local.DatabaseProvider
 import com.sync.filesyncmanager.util.DataStoreProvider
+import com.sync.filesyncmanager.util.FileUtils
 
 /**
  * Application class that initializes the FileSyncManager's platform-specific components
@@ -22,8 +23,16 @@ class FileSyncApplication : Application() {
 
         // Initialize DataStore
         DataStoreProvider.initialize(this)
+        
+        // Initialize FileUtils
+        FileUtils.initialize(this)
 
         // Access database to trigger initialization
-        DatabaseProvider.getDatabase()
+        try {
+            DatabaseProvider.getDatabase()
+        } catch (e: Exception) {
+            // Log error but don't crash the app
+            e.printStackTrace()
+        }
     }
 }

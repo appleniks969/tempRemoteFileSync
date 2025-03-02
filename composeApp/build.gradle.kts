@@ -18,6 +18,17 @@ android {
     buildFeatures {
         compose = true
     }
+    
+    // Fix for multiple manifest files issue
+    sourceSets {
+        getByName("main") {
+            manifest.srcFile("src/androidMain/AndroidManifest.xml")
+            // Ensure we're not looking for main/AndroidManifest.xml
+            resources.srcDirs("src/androidMain/res")
+            java.srcDirs("src/androidMain/kotlin")
+        }
+    }
+    
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -62,4 +73,21 @@ dependencies {
     implementation(libs.androidx.paging.compose.android)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     debugImplementation(libs.compose.ui.tooling)
+    
+    // Add missing dependencies
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("io.ktor:ktor-client-core:2.3.6")
+    implementation("io.ktor:ktor-client-android:2.3.6")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.6")
+    implementation("io.ktor:ktor-client-plugins:2.3.6")
+    implementation("io.ktor:ktor-client-core-jvm:2.3.6")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
+    implementation("com.squareup.okio:okio:3.6.0")
+    
+    // For preview
+    implementation("org.jetbrains.compose.ui:ui-tooling-preview:1.6.0")
 }

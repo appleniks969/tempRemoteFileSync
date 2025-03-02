@@ -1,7 +1,5 @@
 package com.sync.filesyncmanager
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,10 +20,6 @@ import com.sync.filesyncmanager.domain.FileMetadata
 import com.sync.filesyncmanager.domain.SyncStatus
 import com.sync.filesyncmanager.viewmodel.FileSyncViewModel
 import kotlinx.datetime.Instant
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import remotefilesynckmm.composeapp.generated.resources.Res
-import remotefilesynckmm.composeapp.generated.resources.compose_multiplatform
 
 @Composable
 fun App(viewModel: FileSyncViewModel?) {
@@ -38,14 +32,32 @@ fun App(viewModel: FileSyncViewModel?) {
         
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("File Sync Manager") },
-                    actions = {
+                // Use a simple Box with Row instead of the experimental TopAppBar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF6200EE))
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "File Sync Manager",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleLarge
+                        )
                         IconButton(onClick = { viewModel?.syncFiles() }) {
-                            Icon(Icons.Default.Sync, contentDescription = "Sync files")
+                            Icon(
+                                Icons.Default.Sync,
+                                contentDescription = "Sync files",
+                                tint = Color.White
+                            )
                         }
                     }
-                )
+                }
             },
             floatingActionButton = {
                 FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -63,13 +75,12 @@ fun App(viewModel: FileSyncViewModel?) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    elevation = 4.dp
+                        .padding(bottom = 16.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Sync Status",
-                            style = MaterialTheme.typography.h6
+                            style = MaterialTheme.typography.titleLarge
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         when (syncState) {
@@ -119,7 +130,7 @@ fun App(viewModel: FileSyncViewModel?) {
                 // Files list
                 Text(
                     text = "Files",
-                    style = MaterialTheme.typography.h6,
+                    style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
@@ -167,8 +178,7 @@ fun FileItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = 2.dp
+            .padding(vertical = 4.dp)
     ) {
         Row(
             modifier = Modifier
@@ -179,18 +189,18 @@ fun FileItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = file.fileName,
-                    style = MaterialTheme.typography.subtitle1,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Status: ${file.syncStatus.name}",
-                    style = MaterialTheme.typography.caption
+                    style = MaterialTheme.typography.bodySmall
                 )
                 Text(
                     text = "Path: ${file.filePath}",
-                    style = MaterialTheme.typography.caption,
+                    style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -201,14 +211,14 @@ fun FileItem(
                     Icon(
                         Icons.Default.CloudDownload,
                         contentDescription = "Download",
-                        tint = if (!file.isDownloaded) MaterialTheme.colors.primary else Color.Gray
+                        tint = if (!file.isDownloaded) Color.Blue else Color.Gray
                     )
                 }
                 IconButton(onClick = onUpload) {
                     Icon(
                         Icons.Default.CloudUpload,
                         contentDescription = "Upload",
-                        tint = if (!file.isUploaded) MaterialTheme.colors.primary else Color.Gray
+                        tint = if (!file.isUploaded) Color.Blue else Color.Gray
                     )
                 }
             }
@@ -260,7 +270,7 @@ fun AddFileDialog(
     )
 }
 
-@Preview
+// Preview is removed since it's not available
 @Composable
 fun FileItemPreview() {
     MaterialTheme {
