@@ -1,12 +1,12 @@
 package com.sync.filesyncmanager.domain
 
+import com.sync.filesyncmanager.data.local.FileSyncDatabase
 import com.sync.filesyncmanager.util.FileService
+import com.sync.filesyncmanager.util.getPlatformCacheDir
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.timeout
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
-import io.ktor.client.request.head
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -18,11 +18,303 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 /**
- * Implementation of RemoteFileRepository using Ktor HTTP client
+ * Cross-platform interface for accessing preferences storage
+ */
+interface PreferenceStorage {
+    suspend fun getSyncConfig(): SyncConfig
+    suspend fun updateSyncConfig(config: SyncConfig)
+    fun observeSyncConfig(): Flow<SyncConfig>
+}
+
+/**
+ * Repository for configuration management
+ */
+class ConfigRepository(private val preferenceStorage: PreferenceStorage) {
+
+    /**
+     * Gets the current sync configuration
+     */
+    suspend fun getSyncConfig(): SyncConfig {
+        return preferenceStorage.getSyncConfig()
+    }
+
+    /**
+     * Updates the sync configuration
+     */
+    suspend fun updateSyncConfig(config: SyncConfig) {
+        preferenceStorage.updateSyncConfig(config)
+    }
+
+    /**
+     * Observes changes to the sync configuration
+     */
+    fun observeSyncConfig(): Flow<SyncConfig> {
+        return preferenceStorage.observeSyncConfig()
+    }
+
+    /**
+     * Resets the configuration to default values
+     */
+    suspend fun resetToDefaults() {
+        updateSyncConfig(getDefaultConfig())
+    }
+
+    /**
+     * Returns the default configuration
+     */
+    private fun getDefaultConfig(): SyncConfig {
+        return SyncConfig(
+            baseUrl = "",
+            syncStrategy = SyncStrategy.BIDIRECTIONAL,
+            cacheStrategy = CacheStrategy.CACHE_RECENT,
+            maxConcurrentTransfers = 3,
+            autoSyncInterval = null,
+            networkType = NetworkType.ANY,
+            syncOnlyOnWifi = false,
+            authToken = null,
+            compressionEnabled = true,
+            unzipFiles = false,
+            deleteZipAfterExtract = false,
+            retryCount = 3,
+            retryDelay = 5000L,
+            maxCacheSize = null,
+            fileExpiryDuration = null
+        )
+    }
+}
+
+/**
+ * Repository for file metadata management
+ */
+class FileMetadataRepository(private val database: FileSyncDatabase) {
+    private val dao = database.fileMetadataDao()
+
+    /**
+     * Gets file metadata by ID
+     */
+    suspend fun getFileMetadata(fileId: String): FileMetadata? {
+        return dao.getById(fileId)
+    }
+
+    /**
+     * Gets file metadata by file path
+     */
+    suspend fun getFileMetadataByPath(path: String): FileMetadata? {
+        return dao.getByPath(path)
+    }
+
+    /**
+     * Gets all file metadata
+     */
+    suspend fun getAllFileMetadata(): List<FileMetadata> {
+        return dao.getAll()
+    }
+
+    /**
+     * Gets unsynced files
+     */
+    suspend fun getUnsyncedFiles(): List<FileMetadata> {
+        return dao.getUnsyncedFiles()
+    }
+
+    /**
+     * Gets pending downloads
+     */
+    suspend fun getPendingDownloads(): List<FileMetadata> {
+        return dao.getPendingDownloads()
+    }
+
+    /**
+     * Gets pending uploads
+     */
+    suspend fun getPendingUploads(): List<FileMetadata> {
+        return dao.getPendingUploads()
+    }
+
+    /**
+     * Observes file metadata by ID
+     */
+    fun observeFileMetadata(fileId: String): Flow<FileMetadata?> {
+        return dao.observeById(fileId)
+    }
+
+    /**
+     * Observes all file metadata
+     */
+    fun observeAllFileMetadata(): Flow<List<FileMetadata>> {
+        return dao.observeAll()
+    }
+
+    /**
+     * Saves file metadata
+     */
+    suspend fun saveFileMetadata(metadata: FileMetadata) {
+        dao.insert(metadata)
+    }
+
+    /**
+     * Updates sync status
+     */
+    suspend fun updateSyncStatus(fileId: String, status: SyncStatus) {
+        val now = Clock.System.now()
+        dao.updateSyncStatus(fileId, status, now)
+    }
+
+    /**
+     * Updates download status
+     */
+    suspend fun updateDownloadStatus(
+        fileId: String,
+        isDownloaded: Boolean,
+        checksum: String?,
+        status: SyncStatus
+    ) {
+        val now = Clock.System.now()
+        dao.updateDownloadStatus(fileId, isDownloaded, checksum, status, now)
+    }
+
+    /**
+     * Updates upload status
+     */
+    suspend fun updateUploadStatus(
+        fileId: String,
+        isUploaded: Boolean,
+        checksum: String?,
+        status: SyncStatus
+    ) {
+        val now = Clock.System.now()
+        dao.updateUploadStatus(fileId, isUploaded, checksum, status, now)
+    }
+
+    /**
+     * Deletes file metadata
+     */
+    suspend fun deleteFileMetadata(fileId: String) {
+        dao.delete(fileId)
+    }
+
+    /**
+     * Marks file as deleted
+     */
+    suspend fun markFileAsDeleted(fileId: String) {
+        dao.markAsDeleted(fileId)
+    }
+
+    /**
+     * Clears all metadata
+     */
+    suspend fun clearAllMetadata() {
+        dao.deleteAll()
+    }
+}
+
+
+/**
+ * Implementation of LocalFileRepository using FileService
+ */
+class LocalFileRepository(private val fileService: FileService) {
+
+    /**
+     * Saves a file to the local storage
+     */
+    suspend fun saveFile(fileId: String, filePath: String, data: ByteArray): Boolean {
+        return fileService.writeFile(filePath, data)
+    }
+
+    /**
+     * Reads a file from local storage
+     */
+    suspend fun readFile(fileId: String, filePath: String): ByteArray? {
+        return fileService.readFile(filePath)
+    }
+
+    /**
+     * Deletes a file from local storage
+     */
+    suspend fun deleteFile(filePath: String): Boolean {
+        return fileService.deleteFile(filePath)
+    }
+
+    /**
+     * Checks if a file exists at the specified path
+     */
+    suspend fun fileExists(filePath: String): Boolean {
+        return fileService.fileExists(filePath)
+    }
+
+    /**
+     * Gets the checksum of a file
+     */
+    suspend fun getFileChecksum(filePath: String): String? {
+        return fileService.calculateChecksum(filePath)
+    }
+
+    /**
+     * Creates a directory
+     */
+    suspend fun createDirectory(dirPath: String): Boolean {
+        return fileService.createDirectory(dirPath)
+    }
+
+    /**
+     * Gets the size of a file
+     */
+    suspend fun getFileSize(filePath: String): Long {
+        return fileService.getFileSize(filePath)
+    }
+
+    /**
+     * Gets the last modified timestamp of a file
+     */
+    suspend fun getFileLastModified(filePath: String): Instant {
+        return fileService.getLastModified(filePath) ?: Instant.fromEpochMilliseconds(0)
+    }
+
+    /**
+     * Lists files in a directory
+     */
+    suspend fun listFiles(dirPath: String): List<String> {
+        return fileService.listFiles(dirPath)
+    }
+
+    /**
+     * Moves a file from one path to another
+     */
+    suspend fun moveFile(sourcePath: String, destinationPath: String): Boolean {
+        return fileService.moveFile(sourcePath, destinationPath)
+    }
+
+    /**
+     * Copies a file from one path to another
+     */
+    suspend fun copyFile(sourcePath: String, destinationPath: String): Boolean {
+        return fileService.copyFile(sourcePath, destinationPath)
+    }
+
+    /**
+     * Gets the total size of the cache directory
+     */
+    suspend fun getTotalCacheSize(): Long {
+        return fileService.getTotalDirectorySize(getPlatformCacheDir())
+    }
+
+    /**
+     * Clears a directory by deleting all files
+     */
+    suspend fun clearCache(dirPath: String): Boolean {
+        return fileService.clearDirectory(dirPath)
+    }
+}
+
+
+
+/**
+ * Implementation of RemoteFileRepository using HTTP client
  */
 class RemoteFileRepository(
     private val fileService: FileService,
@@ -45,6 +337,9 @@ class RemoteFileRepository(
         val files: List<RemoteFileMetadataDto>
     )
 
+    /**
+     * Downloads a file from the remote server
+     */
     fun downloadFile(fileId: String, destinationPath: String): Flow<SyncProgress> =
         flow {
             try {
@@ -67,9 +362,6 @@ class RemoteFileRepository(
                 val response = httpClient.get("$baseUrl/files/$fileId/content") {
                     headers {
                         authToken?.let { append(HttpHeaders.Authorization, "Bearer $it") }
-                    }
-                    timeout {
-                        requestTimeoutMillis = 30000 // 30 seconds
                     }
                 }
 
@@ -163,6 +455,9 @@ class RemoteFileRepository(
             }
         }
 
+    /**
+     * Uploads a file to the remote server
+     */
     fun uploadFile(fileId: String, localPath: String): Flow<SyncProgress> = flow {
         try {
 
@@ -190,13 +485,10 @@ class RemoteFileRepository(
             val fileData = fileService.readFile(localPath)
                 ?: throw IllegalArgumentException("Could not read file: $localPath")
 
-            // Build a multipart request
+            // Upload the file
             val response = httpClient.post("$baseUrl/files/$fileId/content") {
                 headers {
                     authToken?.let { append(HttpHeaders.Authorization, "Bearer $it") }
-                }
-                timeout {
-                    requestTimeoutMillis = 60000 // 60 seconds for upload
                 }
                 setBody(fileData)
             }
@@ -235,6 +527,9 @@ class RemoteFileRepository(
         }
     }
 
+    /**
+     * Gets the metadata of a remote file
+     */
     suspend fun getRemoteMetadata(fileId: String): FileMetadata? {
         return try {
             val response = httpClient.get("$baseUrl/files/$fileId") {
@@ -266,6 +561,9 @@ class RemoteFileRepository(
         }
     }
 
+    /**
+     * Gets a list of all remote files
+     */
     suspend fun getRemoteFilesList(): List<FileMetadata> {
         return try {
             val response = httpClient.get("$baseUrl/files") {
@@ -298,6 +596,9 @@ class RemoteFileRepository(
         }
     }
 
+    /**
+     * Deletes a remote file
+     */
     suspend fun deleteRemoteFile(fileId: String): Boolean {
         return try {
             val response = httpClient.delete("$baseUrl/files/$fileId") {
@@ -312,9 +613,12 @@ class RemoteFileRepository(
         }
     }
 
+    /**
+     * Checks if a remote file exists
+     */
     suspend fun checkFileExists(fileId: String): Boolean {
         return try {
-            val response = httpClient.head("$baseUrl/files/$fileId") {
+            val response = httpClient.get("$baseUrl/files/$fileId") {
                 headers {
                     authToken?.let { append(HttpHeaders.Authorization, "Bearer $it") }
                 }
@@ -326,6 +630,9 @@ class RemoteFileRepository(
         }
     }
 
+    /**
+     * Gets the checksum of a remote file
+     */
     suspend fun getFileChecksum(fileId: String): String? {
         return try {
             val response = httpClient.get("$baseUrl/files/$fileId/checksum") {

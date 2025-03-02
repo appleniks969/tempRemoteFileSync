@@ -90,6 +90,7 @@ kotlin {
                 // dependencies declared in commonMain.
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.androidx.room.paging)
+                implementation(libs.workRuntime)
             }
         }
 

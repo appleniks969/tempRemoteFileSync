@@ -3,7 +3,10 @@ package com.sync.filesyncmanager.util
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
-import okio.*
+import okio.Buffer
+import okio.FileSystem
+import okio.HashingSink
+import okio.Path
 import okio.Path.Companion.toPath
 
 /**
@@ -291,3 +294,110 @@ class FileService(private val fileSystem: FileSystem) {
         return this.toPath()
     }
 }
+
+/**
+ * Platform-specific network monitoring
+ */
+expect class NetworkMonitor() {
+    /**
+     * Checks if any network is available
+     */
+    suspend fun isNetworkAvailable(): Boolean
+
+    /**
+     * Checks if WiFi is available
+     */
+    suspend fun isWifiAvailable(): Boolean
+
+    /**
+     * Checks if an unmetered connection is available
+     */
+    suspend fun isUnmeteredNetworkAvailable(): Boolean
+}
+
+/**
+ * Platform-specific scheduler for periodic tasks
+ */
+expect class SyncScheduler() {
+    /**
+     * Task identifier for background operations
+     */
+    val SYNC_TASK_IDENTIFIER: String
+
+    /**
+     * Schedules a periodic task
+     * @param intervalMs The interval in milliseconds
+     * @param action The action to perform
+     */
+    suspend fun schedulePeriodic(intervalMs: Long, action: suspend () -> Unit)
+
+    /**
+     * Schedules a one-time task with delay
+     * @param delayMs The delay in milliseconds
+     * @param action The action to perform
+     */
+    suspend fun scheduleOnce(delayMs: Long, action: suspend () -> Unit)
+
+    /**
+     * Cancels all scheduled tasks
+     */
+    fun cancel()
+
+    /**
+     * Submits a background task request
+     * Available on iOS but no-op on Android
+     */
+    fun submitBackgroundTask()
+
+    /**
+     * Registers task handlers
+     * Available on iOS but no-op on Android
+     */
+    fun registerTasks()
+}
+
+/**
+ * Cross-platform ZIP service
+ */
+class ZipService(private val fileSystem: FileSystem, val fileService: FileService) {
+
+    /**
+     * Extracts a ZIP file to a destination directory
+     *
+     * @param zipFilePath Path to the ZIP file
+     * @param destDirPath Path to the destination directory
+     * @return Path to the extracted directory or null if extraction failed
+     */
+    suspend fun unzip(zipFilePath: String, destDirPath: String): String? = withContext(Dispatchers.Default) {
+        try {
+            // Ensure destination directory exists
+            fileService.createDirectory(destDirPath)
+
+            // Platform-specific unzipping implementation
+            val success = unzipImpl(zipFilePath, destDirPath)
+
+            if (success) destDirPath else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Checks if a file is a ZIP file based on its extension
+     */
+    fun isZipFile(filePath: String): Boolean {
+        return filePath.lowercase().endsWith(".zip")
+    }
+}
+
+internal expect suspend fun ZipService.unzipImpl(
+    zipFilePath: String,
+    destDirPath: String
+): Boolean
+
+/**
+ * Platform-specific functions for file access
+ */
+internal expect fun getPlatformCacheDir(): String
+
+internal expect fun getPlatformFilesDir(): String

@@ -1,6 +1,7 @@
 package com.sync.filesyncmanager.util
 
 import android.content.Context
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -8,11 +9,14 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.sync.filesyncmanager.AppContextProvider
+import com.sync.filesyncmanager.FileSyncManagerFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -45,10 +49,10 @@ actual class SyncScheduler actual constructor() {
         // Also schedule with WorkManager for reliability
         try {
             val context = AppContextProvider.context
-            
+
             // Need minimum interval of 15 minutes for WorkManager
             val workIntervalMs = maxOf(intervalMs, 15 * 60 * 1000)
-            
+
             val workRequest = PeriodicWorkRequestBuilder<SyncWorker>(
                 workIntervalMs, TimeUnit.MILLISECONDS
             ).build()
@@ -77,7 +81,7 @@ actual class SyncScheduler actual constructor() {
         // Also schedule with WorkManager for reliability
         try {
             val context = AppContextProvider.context
-            
+
             val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
                 .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
                 .build()
@@ -111,16 +115,61 @@ actual class SyncScheduler actual constructor() {
     }
 
     /**
-     * Worker class for WorkManager integration
+     * WorkManager worker for background file synchronization
      */
-    class SyncWorker(appContext: Context, params: WorkerParameters) :
-        CoroutineWorker(appContext, params) {
+    class SyncWorker(
+        appContext: Context,
+        workerParams: WorkerParameters
+    ) : CoroutineWorker(appContext, workerParams) {
+
+        companion object {
+            private const val TAG = "SyncWorker"
+        }
+
         override suspend fun doWork(): Result {
-            try {
-                // This would need to connect to the actual sync logic in real implementation
-                return Result.success()
+            Log.d(TAG, "Starting background sync")
+
+            return try {
+                // Create the sync manager
+                val factory = FileSyncManagerFactory()
+                val syncManager = factory.create()
+
+                // Perform sync
+                val result = syncManager.syncAll()
+                    .catch { error ->
+                        Log.e(TAG, "Error during sync", error)
+                        // Return failure if we get an error
+                        Result.failure()
+                    }
+                    .firstOrNull()
+
+                if (result != null) {
+                    Log.d(
+                        TAG,
+                        "Sync completed: Success=${result.successCount}, Failed=${result.failedCount}, Conflicts=${result.conflictCount}"
+                    )
+
+                    // If there are failures, consider scheduling a retry
+                    if (result.failedCount > 0) {
+                        if (runAttemptCount < 3) {
+                            Result.retry()
+                        } else {
+                            Result.failure()
+                        }
+                    } else {
+                        Result.success()
+                    }
+                } else {
+                    Log.d(TAG, "Sync completed without result")
+                    Result.success()
+                }
             } catch (e: Exception) {
-                return Result.retry()
+                Log.e(TAG, "Exception during sync", e)
+                if (runAttemptCount < 3) {
+                    Result.retry()
+                } else {
+                    Result.failure()
+                }
             }
         }
     }

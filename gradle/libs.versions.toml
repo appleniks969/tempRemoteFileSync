@@ -35,6 +35,7 @@ okio = "3.10.2"
 runner = "1.6.2"
 core = "1.6.1"
 junit = "1.2.1"
+workVersion = "2.10.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -70,6 +71,7 @@ kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", versio
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit" }
+workRuntime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workVersion" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

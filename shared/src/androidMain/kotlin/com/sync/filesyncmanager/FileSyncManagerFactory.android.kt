@@ -1,13 +1,16 @@
 package com.sync.filesyncmanager
 
+
 import com.sync.filesyncmanager.api.FileSyncManager
-import com.sync.filesyncmanager.data.local.DatabaseFactory
+import com.sync.filesyncmanager.api.FileSyncManagerImpl
+import com.sync.filesyncmanager.data.PreferenceStorageFactory
+import com.sync.filesyncmanager.data.local.DatabaseProvider
+import com.sync.filesyncmanager.data.local.FileSyncDatabase
 import com.sync.filesyncmanager.domain.ConfigRepository
 import com.sync.filesyncmanager.domain.FileMetadataRepository
 import com.sync.filesyncmanager.domain.LocalFileRepository
 import com.sync.filesyncmanager.domain.RemoteFileRepository
 import com.sync.filesyncmanager.domain.SyncConfig
-import com.sync.filesyncmanager.util.DataStoreProvider
 import com.sync.filesyncmanager.util.FileService
 import com.sync.filesyncmanager.util.NetworkMonitor
 import com.sync.filesyncmanager.util.SyncScheduler
@@ -26,25 +29,20 @@ actual class FileSyncManagerFactory {
         prettyPrint = false
     }
 
-    /**
-     * Creates a FileSyncManager instance
-     */
-    actual suspend fun create(
-        initialConfig: SyncConfig?
-    ): FileSyncManager {
+    actual suspend fun create(initialConfig: SyncConfig?): FileSyncManager {
         // Create file system and services
         val fileSystem = getFileSystem()
         val fileService = FileService(fileSystem)
         val zipService = ZipService(fileSystem, fileService)
 
         // Create repositories
-        val database = DatabaseFactory.getDatabase()
+        val database = getDatabase()
         val metadataRepo = FileMetadataRepository(database)
         val localRepo = LocalFileRepository(fileService)
-        
-        // Get DataStore from provider
-        val dataStore = DataStoreProvider.getDataStore()
-        val configRepo = ConfigRepository(dataStore, json)
+
+        // Get preference storage
+        val preferenceStorage = PreferenceStorageFactory.create()
+        val configRepo = ConfigRepository(preferenceStorage)
 
         // Create network monitor and scheduler
         val networkMonitor = NetworkMonitor()
@@ -65,7 +63,7 @@ actual class FileSyncManagerFactory {
         )
 
         // Create and return the FileSyncManager
-        return FileSyncManager(
+        return FileSyncManagerImpl(
             metadataRepo = metadataRepo,
             remoteRepo = remoteRepo,
             localRepo = localRepo,
@@ -77,9 +75,6 @@ actual class FileSyncManagerFactory {
         )
     }
 
-    /**
-     * Creates an HTTP client
-     */
     actual fun createHttpClient(): HttpClient {
         return HttpClient {
             install(ContentNegotiation) {
@@ -88,10 +83,11 @@ actual class FileSyncManagerFactory {
         }
     }
 
-    /**
-     * Gets the filesystem for this platform
-     */
     actual fun getFileSystem(): FileSystem {
         return FileSystem.SYSTEM
+    }
+
+    actual fun getDatabase(): FileSyncDatabase {
+        return DatabaseProvider.getDatabase()
     }
 }

@@ -35,9 +35,134 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
 /**
+ * Interface for file synchronization operations
+ */
+interface FileSyncManager {
+    /**
+     * Synchronizes a specific file
+     * @param fileId ID of the file to sync
+     * @return Flow of sync progress updates
+     */
+    fun syncFile(fileId: String): Flow<SyncProgress>
+
+    /**
+     * Synchronizes all files
+     * @return Flow of batch sync results
+     */
+    fun syncAll(): Flow<BatchSyncResult>
+
+    /**
+     * Downloads a file
+     * @param fileId ID of the file to download
+     * @param destinationPath Optional path where to save the file
+     * @return Flow of sync progress updates
+     */
+    fun downloadFile(fileId: String, destinationPath: String?): Flow<SyncProgress>
+
+    /**
+     * Uploads a file
+     * @param fileId ID of the file to upload
+     * @param localPath Optional path to the local file
+     * @return Flow of sync progress updates
+     */
+    fun uploadFile(fileId: String, localPath: String?): Flow<SyncProgress>
+
+    /**
+     * Gets metadata for a specific file
+     * @param fileId ID of the file
+     * @return File metadata or null if not found
+     */
+    suspend fun getFileMetadata(fileId: String): FileMetadata?
+
+    /**
+     * Observes changes to file metadata
+     * @param fileId ID of the file to observe
+     * @return Flow of file metadata updates
+     */
+    fun observeFileMetadata(fileId: String): Flow<FileMetadata?>
+
+    /**
+     * Observes all files
+     * @return Flow of all file metadata
+     */
+    fun observeAllFiles(): Flow<List<FileMetadata>>
+
+    /**
+     * Gets all files
+     * @return List of all file metadata
+     */
+    suspend fun getAllFiles(): List<FileMetadata>
+
+    /**
+     * Adds a file to be synced
+     * @param metadata Metadata of the file to add
+     * @param autoSync Whether to sync the file immediately
+     * @return Result of the operation
+     */
+    suspend fun addFile(metadata: FileMetadata, autoSync: Boolean): SyncResult
+
+    /**
+     * Removes a file
+     * @param fileId ID of the file to remove
+     * @param deleteLocal Whether to delete the local file
+     * @param deleteRemote Whether to delete the remote file
+     * @return Result of the operation
+     */
+    suspend fun removeFile(fileId: String, deleteLocal: Boolean, deleteRemote: Boolean): SyncResult
+
+    /**
+     * Gets the current sync configuration
+     * @return The current sync configuration
+     */
+    suspend fun getConfig(): SyncConfig
+
+    /**
+     * Updates the sync configuration
+     * @param config The new configuration
+     */
+    suspend fun updateConfig(config: SyncConfig)
+
+    /**
+     * Observes changes to the sync configuration
+     * @return Flow of configuration updates
+     */
+    fun observeConfig(): Flow<SyncConfig>
+
+    /**
+     * Starts automatic synchronization
+     */
+    fun startAutoSync()
+
+    /**
+     * Stops automatic synchronization
+     */
+    fun stopAutoSync()
+
+    /**
+     * Clears the local cache
+     * @return The number of bytes cleared
+     */
+    suspend fun clearCache(): Long
+
+    /**
+     * Checks if the network is available for sync
+     * @return Whether the network is available
+     */
+    suspend fun isNetworkAvailable(): Boolean
+
+    /**
+     * Resolves a file conflict
+     * @param fileId ID of the file in conflict
+     * @param resolution The resolution strategy
+     * @return Result of the operation
+     */
+    suspend fun resolveConflict(fileId: String, resolution: SyncStrategy): SyncResult
+}
+
+/**
  * Implementation of the FileSyncManager interface
  */
-class FileSyncManager(
+class FileSyncManagerImpl(
     private val metadataRepo: FileMetadataRepository,
     private val remoteRepo: RemoteFileRepository,
     private val localRepo: LocalFileRepository,
@@ -46,12 +171,12 @@ class FileSyncManager(
     private val syncScheduler: SyncScheduler,
     private val zipService: ZipService,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
-) {
+) : FileSyncManager {
 
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private var autoSyncJob: Job? = null
 
-    fun syncFile(fileId: String): Flow<SyncProgress> = flow {
+    override fun syncFile(fileId: String): Flow<SyncProgress> = flow {
         val metadata = metadataRepo.getFileMetadata(fileId)
             ?: throw IllegalArgumentException("File not found: $fileId")
         val config = configRepo.getSyncConfig()
@@ -128,7 +253,7 @@ class FileSyncManager(
 
                             SyncStrategy.NEWEST_WINS -> {
                                 if (metadata.lastModified > remoteMetadata.lastModified) {
-                                    uploadFile(fileId,null).collect { emit(it) }
+                                    uploadFile(fileId, null).collect { emit(it) }
                                 } else {
                                     downloadFile(fileId, null).collect { emit(it) }
                                 }
@@ -158,7 +283,7 @@ class FileSyncManager(
     }.flowOn(dispatcher)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun syncAll(): Flow<BatchSyncResult> = flow {
+    override fun syncAll(): Flow<BatchSyncResult> = flow {
         val config = configRepo.getSyncConfig()
         if (!isNetworkSuitable(config)) {
             emit(BatchSyncResult(0, 0, 0, emptyList(), 0))
@@ -227,7 +352,7 @@ class FileSyncManager(
         )
     }.flowOn(dispatcher)
 
-    fun downloadFile(fileId: String, destinationPath: String?): Flow<SyncProgress> = flow {
+    override fun downloadFile(fileId: String, destinationPath: String?): Flow<SyncProgress> = flow {
         val metadata = metadataRepo.getFileMetadata(fileId)
             ?: throw IllegalArgumentException("File not found: $fileId")
         val targetPath = destinationPath ?: metadata.filePath
@@ -291,7 +416,7 @@ class FileSyncManager(
             }
     }.flowOn(dispatcher)
 
-    fun uploadFile(fileId: String, localPath: String?): Flow<SyncProgress> = flow {
+    override fun uploadFile(fileId: String, localPath: String?): Flow<SyncProgress> = flow {
         val metadata = metadataRepo.getFileMetadata(fileId)
             ?: throw IllegalArgumentException("File not found: $fileId")
         val sourcePath = localPath ?: metadata.filePath
@@ -318,23 +443,23 @@ class FileSyncManager(
             }
     }.flowOn(dispatcher)
 
-    suspend fun getFileMetadata(fileId: String): FileMetadata? {
+    override suspend fun getFileMetadata(fileId: String): FileMetadata? {
         return metadataRepo.getFileMetadata(fileId)
     }
 
-    fun observeFileMetadata(fileId: String): Flow<FileMetadata?> {
+    override fun observeFileMetadata(fileId: String): Flow<FileMetadata?> {
         return metadataRepo.observeFileMetadata(fileId)
     }
 
-    fun observeAllFiles(): Flow<List<FileMetadata>> {
+    override fun observeAllFiles(): Flow<List<FileMetadata>> {
         return metadataRepo.observeAllFileMetadata()
     }
 
-    suspend fun getAllFiles(): List<FileMetadata> {
+    override suspend fun getAllFiles(): List<FileMetadata> {
         return metadataRepo.getAllFileMetadata()
     }
 
-    suspend fun addFile(metadata: FileMetadata, autoSync: Boolean): SyncResult {
+    override suspend fun addFile(metadata: FileMetadata, autoSync: Boolean): SyncResult {
         return try {
             metadataRepo.saveFileMetadata(metadata)
 
@@ -363,7 +488,7 @@ class FileSyncManager(
         }
     }
 
-    suspend fun removeFile(
+    override suspend fun removeFile(
         fileId: String,
         deleteLocal: Boolean,
         deleteRemote: Boolean
@@ -400,11 +525,11 @@ class FileSyncManager(
         }
     }
 
-    suspend fun getConfig(): SyncConfig {
+    override suspend fun getConfig(): SyncConfig {
         return configRepo.getSyncConfig()
     }
 
-    suspend fun updateConfig(config: SyncConfig) {
+    override suspend fun updateConfig(config: SyncConfig) {
         configRepo.updateSyncConfig(config)
 
         // Update auto-sync if needed
@@ -416,11 +541,11 @@ class FileSyncManager(
         }
     }
 
-    fun observeConfig(): Flow<SyncConfig> {
+    override fun observeConfig(): Flow<SyncConfig> {
         return configRepo.observeSyncConfig()
     }
 
-    fun startAutoSync() {
+    override fun startAutoSync() {
         autoSyncJob?.cancel()
 
         autoSyncJob = scope.launch {
@@ -438,13 +563,13 @@ class FileSyncManager(
         }
     }
 
-    fun stopAutoSync() {
+    override fun stopAutoSync() {
         autoSyncJob?.cancel()
         autoSyncJob = null
         syncScheduler.cancel()
     }
 
-    suspend fun clearCache(): Long {
+    override suspend fun clearCache(): Long {
         val config = configRepo.getSyncConfig()
         val currentSize = localRepo.getTotalCacheSize()
 
@@ -539,12 +664,12 @@ class FileSyncManager(
         }
     }
 
-    suspend fun isNetworkAvailable(): Boolean {
+    override suspend fun isNetworkAvailable(): Boolean {
         val config = configRepo.getSyncConfig()
         return isNetworkSuitable(config)
     }
 
-    suspend fun resolveConflict(fileId: String, resolution: SyncStrategy): SyncResult {
+    override suspend fun resolveConflict(fileId: String, resolution: SyncStrategy): SyncResult {
         val metadata = metadataRepo.getFileMetadata(fileId) ?: return SyncResult.Error(
             fileId,
             "File not found"

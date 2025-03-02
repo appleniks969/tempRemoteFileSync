@@ -1,6 +1,9 @@
 package com.sync.filesyncmanager
 
 import com.sync.filesyncmanager.api.FileSyncManager
+import com.sync.filesyncmanager.data.PreferenceStorageFactory
+import com.sync.filesyncmanager.data.local.DatabaseProvider
+import com.sync.filesyncmanager.data.local.FileSyncDatabase
 import com.sync.filesyncmanager.domain.ConfigRepository
 import com.sync.filesyncmanager.domain.FileMetadataRepository
 import com.sync.filesyncmanager.domain.LocalFileRepository
@@ -18,17 +21,12 @@ import kotlinx.serialization.json.Json
 import okio.FileSystem
 
 actual class FileSyncManagerFactory {
-    private val configStore = IosConfigStore()
-    
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
         prettyPrint = false
     }
-    
-    /**
-     * Creates a FileSyncManager instance
-     */
+
     actual suspend fun create(initialConfig: SyncConfig?): FileSyncManager {
         // Create file system and services
         val fileSystem = getFileSystem()
@@ -36,10 +34,13 @@ actual class FileSyncManagerFactory {
         val zipService = ZipService(fileSystem, fileService)
 
         // Create repositories
-        val memoryDb = DatabaseProviderIOS.getMemoryDatabase()
-        val metadataRepo = FileMetadataRepository(memoryDb)
+        val database = getDatabase()
+        val metadataRepo = FileMetadataRepository(database)
         val localRepo = LocalFileRepository(fileService)
-        val configRepo = ConfigRepository(configStore, json)
+
+        // Get preference storage
+        val preferenceStorage = PreferenceStorageFactory.create()
+        val configRepo = ConfigRepository(preferenceStorage)
 
         // Create network monitor
         val networkMonitor = NetworkMonitor()
@@ -75,9 +76,6 @@ actual class FileSyncManagerFactory {
         )
     }
 
-    /**
-     * Creates an HTTP client
-     */
     actual fun createHttpClient(): HttpClient {
         return HttpClient {
             install(ContentNegotiation) {
@@ -86,10 +84,11 @@ actual class FileSyncManagerFactory {
         }
     }
 
-    /**
-     * Gets the filesystem for this platform
-     */
     actual fun getFileSystem(): FileSystem {
         return FileSystem.SYSTEM
+    }
+
+    actual fun getDatabase(): FileSyncDatabase {
+        return DatabaseProvider.getDatabase()
     }
 }
