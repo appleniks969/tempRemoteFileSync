@@ -12,7 +12,7 @@ import platform.Foundation.NSTimer
  * Simplified iOS implementation of SyncScheduler using just coroutines
  */
 actual class SyncScheduler actual constructor() {
-    actual val SYNC_TASK_IDENTIFIER: String = "com.sync.filesyncmanager.sync-task"
+    actual val syncTaskIdentifier: String = "com.sync.filesyncmanager.sync-task"
     
     private val scope = CoroutineScope(IODispatcher + SupervisorJob())
     private var periodicJob: Job? = null

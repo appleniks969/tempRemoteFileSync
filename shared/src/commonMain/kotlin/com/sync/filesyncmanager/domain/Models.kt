@@ -58,7 +58,8 @@ data class SyncProgress(
     val fileName: String,
     val bytesTransferred: Long,
     val totalBytes: Long,
-    val progress: Float, // 0.0f to 1.0f
+    // 0.0f to 1.0f
+    val progress: Float,
     val status: SyncStatus,
     val isDownload: Boolean, // true if downloading, false if uploading
     val filePath: String? = null // Path to the file or extracted directory

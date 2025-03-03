@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.flowOf
 /**
  * Example class demonstrating the FileSyncManager initialization with configuration
  */
-object FileSyncExample {
+class FileSyncExample {
     /**
      * Creates a sample configuration for the file sync manager
      * @return A sample SyncConfig object

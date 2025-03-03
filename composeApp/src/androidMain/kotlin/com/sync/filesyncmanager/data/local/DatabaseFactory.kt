@@ -2,23 +2,58 @@ package com.sync.filesyncmanager.data.local
 
 import android.content.Context
 import androidx.room.Room
-import com.sync.filesyncmanager.data.local.FileSyncDatabase
+import com.sync.filesyncmanager.api.provider.Provider
 
 /**
- * Factory for creating and accessing the Room database
+ * Provider for Room database access
  */
-object DatabaseFactory {
-    private var database: FileSyncDatabase? = null
+interface AppDatabaseProvider : Provider<FileSyncDatabase>
 
-    fun initialize(context: Context) {
-        database =
-            Room
-                .databaseBuilder(
-                    context.applicationContext,
-                    FileSyncDatabase::class.java,
-                    "file_sync_database",
-                ).build()
+/**
+ * Implementation of DatabaseProvider using Room
+ */
+class RoomDatabaseProvider(
+    private val context: Context,
+) : AppDatabaseProvider {
+    companion object {
+        private const val DATABASE_NAME = "file_sync_database"
+        private var instance: FileSyncDatabase? = null
     }
 
-    fun getDatabase(): FileSyncDatabase = database ?: throw IllegalStateException("Database not initialized")
+    override fun get(): FileSyncDatabase =
+        instance ?: synchronized(this) {
+            instance ?: createDatabase().also { instance = it }
+        }
+
+    private fun createDatabase(): FileSyncDatabase =
+        Room
+            .databaseBuilder(
+                context.applicationContext,
+                FileSyncDatabase::class.java,
+                DATABASE_NAME,
+            ).build()
+}
+
+/**
+ * Factory for providing database instances
+ */
+object DatabaseFactory {
+    private var databaseProvider: AppDatabaseProvider? = null
+
+    /**
+     * Initializes the database provider
+     */
+    fun initialize(context: Context) {
+        databaseProvider = RoomDatabaseProvider(context)
+    }
+
+    /**
+     * Gets the database provider
+     */
+    fun getDatabaseProvider(): AppDatabaseProvider = databaseProvider ?: throw IllegalStateException("Database provider not initialized")
+
+    /**
+     * Gets the database instance
+     */
+    fun getDatabase(): FileSyncDatabase = getDatabaseProvider().get()
 }

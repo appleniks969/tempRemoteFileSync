@@ -21,6 +21,8 @@ actual val IODispatcher: CoroutineDispatcher = Dispatchers.IO
  * Android implementation of ZipService
  */
 actual class ZipService actual constructor() {
+    private val logger = ConsoleLogger("ZipService-Android")
+
     /**
      * Extracts a ZIP file to a directory on Android
      */
@@ -36,7 +38,7 @@ actual class ZipService actual constructor() {
                 try {
                     File(zipFilePath).delete()
                 } catch (e: Exception) {
-                    println("Error deleting ZIP file: ${e.message}")
+                    logger.error("Error deleting ZIP file", e)
                 }
             }
 
@@ -66,12 +68,13 @@ actual class ZipService actual constructor() {
         destinationPath: String,
     ): Boolean {
         try {
+            logger.debug("Extracting ZIP file: $zipPath to $destinationPath")
             val destDir = File(destinationPath)
             if (!destDir.exists()) {
                 destDir.mkdirs()
             }
 
-            val buffer = ByteArray(1024)
+            val buffer = ByteArray(BUFFER_SIZE)
             val zipFile = File(zipPath)
             val zis = ZipInputStream(BufferedInputStream(FileInputStream(zipFile)))
 
@@ -86,16 +89,7 @@ actual class ZipService actual constructor() {
                 }
 
                 if (!zipEntry.isDirectory) {
-                    val fos = FileOutputStream(newFile)
-                    val bos = BufferedOutputStream(fos)
-
-                    var len: Int
-                    while (zis.read(buffer).also { len = it } > 0) {
-                        bos.write(buffer, 0, len)
-                    }
-
-                    bos.flush()
-                    bos.close()
+                    extractFile(zipEntry, newFile, buffer, zis)
                 } else {
                     newFile.mkdirs()
                 }
@@ -105,12 +99,31 @@ actual class ZipService actual constructor() {
             }
 
             zis.close()
-
+            logger.info("ZIP extraction completed successfully")
             return true
         } catch (e: Exception) {
-            println("Error extracting ZIP: ${e.message}")
+            logger.error("Error extracting ZIP", e)
             return false
         }
+    }
+
+    private fun extractFile(
+        zipEntry: ZipEntry,
+        outputFile: File,
+        buffer: ByteArray,
+        zipInputStream: ZipInputStream,
+    ) {
+        val fos = FileOutputStream(outputFile)
+        val bos = BufferedOutputStream(fos)
+
+        var len: Int
+        while (zipInputStream.read(buffer).also { len = it } > 0) {
+            bos.write(buffer, 0, len)
+        }
+
+        bos.flush()
+        bos.close()
+        fos.close()
     }
 
     /**
@@ -125,10 +138,12 @@ actual class ZipService actual constructor() {
         zipPath: String,
     ): Boolean {
         try {
+            logger.debug("Creating ZIP file from: $sourcePath to $zipPath")
             val sourceDir = File(sourcePath)
             val zipFile = File(zipPath)
 
             if (!sourceDir.exists() || !sourceDir.isDirectory) {
+                logger.error("Source directory does not exist or is not a directory: $sourcePath")
                 return false
             }
 
@@ -143,9 +158,10 @@ actual class ZipService actual constructor() {
             zos.close()
             bos.close()
 
+            logger.info("ZIP creation completed successfully")
             return true
         } catch (e: Exception) {
-            println("Error creating ZIP: ${e.message}")
+            logger.error("Error creating ZIP", e)
             return false
         }
     }
@@ -160,7 +176,7 @@ actual class ZipService actual constructor() {
     ) {
         val files = sourceDir.listFiles() ?: return
 
-        val buffer = ByteArray(1024)
+        val buffer = ByteArray(BUFFER_SIZE)
 
         for (file in files) {
             if (file.isDirectory) {
@@ -185,5 +201,9 @@ actual class ZipService actual constructor() {
             bis.close()
             zos.closeEntry()
         }
+    }
+
+    companion object {
+        private const val BUFFER_SIZE = 8192
     }
 }

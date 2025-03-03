@@ -7,7 +7,7 @@ expect class SyncScheduler() {
     /**
      * Unique identifier for sync tasks
      */
-    val SYNC_TASK_IDENTIFIER: String
+    val syncTaskIdentifier: String
 
     /**
      * Schedules a periodic sync action

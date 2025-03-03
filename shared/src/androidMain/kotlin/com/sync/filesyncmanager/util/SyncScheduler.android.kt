@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit
  * Android implementation of SyncScheduler using WorkManager
  */
 actual class SyncScheduler actual constructor() {
-    actual val SYNC_TASK_IDENTIFIER: String = "com.sync.filesyncmanager.SYNC_TASK"
+    actual val syncTaskIdentifier: String = "com.sync.filesyncmanager.SYNC_TASK"
 
     private val scope = CoroutineScope(IODispatcher + SupervisorJob())
     private var periodicJob: Job? = null
@@ -59,7 +59,7 @@ actual class SyncScheduler actual constructor() {
 
             WorkManager.getInstance(context)
                 .enqueueUniquePeriodicWork(
-                    SYNC_TASK_IDENTIFIER,
+                    syncTaskIdentifier,
                     ExistingPeriodicWorkPolicy.UPDATE,
                     workRequest
                 )
@@ -98,7 +98,7 @@ actual class SyncScheduler actual constructor() {
 
         try {
             val context = AppContextProvider.context
-            WorkManager.getInstance(context).cancelUniqueWork(SYNC_TASK_IDENTIFIER)
+            WorkManager.getInstance(context).cancelUniqueWork(syncTaskIdentifier)
         } catch (e: Exception) {
             // Ignore if context is not available
         }

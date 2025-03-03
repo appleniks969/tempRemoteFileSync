@@ -84,16 +84,43 @@ actual class FileSyncManagerFactory {
                 authToken = config.authToken,
             )
 
-        // Create and return the FileSyncManager
-        return FileSyncManagerImpl(
+        // Create services and managers for the new structure
+        val networkManager = com.sync.filesyncmanager.api.network.NetworkManagerImpl(networkMonitor)
+        val cacheManager = com.sync.filesyncmanager.api.cache.CacheManagerImpl(metadataRepo, localRepo)
+        
+        // Create scope for coroutines
+        val coroutineScope = kotlinx.coroutines.CoroutineScope(
+            kotlinx.coroutines.SupervisorJob() + Dispatchers.Default
+        )
+        
+        // Create sync service
+        val syncService = com.sync.filesyncmanager.api.sync.SynchronizationServiceImpl(
             metadataRepo = metadataRepo,
             remoteRepo = remoteRepo,
             localRepo = localRepo,
             configRepo = configRepo,
-            networkMonitor = networkMonitor,
-            syncScheduler = syncScheduler,
+            networkManager = networkManager,
             zipService = zipService,
-            dispatcher = Dispatchers.Default,
+            dispatcher = Dispatchers.Default
+        )
+        
+        // Create auto sync scheduler
+        val autoSyncScheduler = com.sync.filesyncmanager.api.sync.AutoSyncSchedulerImpl(
+            synchronizationService = syncService,
+            configRepo = configRepo,
+            networkManager = networkManager,
+            syncScheduler = syncScheduler,
+            scope = coroutineScope
+        )
+        
+        // Create and return the FileSyncManager
+        return FileSyncManagerImpl(
+            metadataRepo = metadataRepo,
+            configRepo = configRepo,
+            networkManager = networkManager,
+            cacheManager = cacheManager,
+            syncService = syncService,
+            autoSyncScheduler = autoSyncScheduler
         )
     }
 

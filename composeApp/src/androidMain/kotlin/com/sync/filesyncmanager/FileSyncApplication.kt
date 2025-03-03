@@ -1,7 +1,7 @@
 package com.sync.filesyncmanager
 
 import android.app.Application
-import com.sync.filesyncmanager.data.local.DatabaseProvider
+import com.sync.filesyncmanager.data.local.DatabaseFactory
 import com.sync.filesyncmanager.util.DataStoreProvider
 import com.sync.filesyncmanager.util.FileUtils
 
@@ -26,9 +26,10 @@ class FileSyncApplication : Application() {
         // Initialize FileUtils
         FileUtils.initialize(this)
 
-        // Access database to trigger initialization
+        // Initialize and access database
         try {
-            DatabaseProvider.getDatabase()
+            DatabaseFactory.initialize(this)
+            DatabaseFactory.getDatabase()
         } catch (e: Exception) {
             // Log error but don't crash the app
             e.printStackTrace()
