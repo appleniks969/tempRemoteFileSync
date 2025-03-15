@@ -76,7 +76,7 @@ dependencies {
 
     // Add missing dependencies
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
