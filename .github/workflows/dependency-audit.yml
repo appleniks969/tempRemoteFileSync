@@ -8,28 +8,34 @@ on:
     - cron: '0 0 * * 0' # Runs weekly on Sunday
 
 jobs:
-  depcheck:
+  dependencyAudit:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
-          node-version: '16'
+          distribution: 'adopt'
+          java-version: '11'
 
-      - name: Install depcheck
-        run: npm install -g depcheck
-
-      - name: Run depcheck
-        run: depcheck
-
-      - name: Create issue for unused dependencies
-        if: failure()
-        uses: peter-evans/create-issue-from-file@v4
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
         with:
-          title: 'Unused Dependencies Found'
-          content-filepath: ./depcheck-output.txt
-          labels: 'dependency-audit'
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run dependency updates
+        run: ./gradlew dependencyUpdates
+
+      - name: Upload dependency report
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-report
+          path: build/dependencyUpdates/report.txt
