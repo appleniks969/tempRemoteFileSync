@@ -86,7 +86,7 @@ dependencies {
     implementation("io.ktor:ktor-client-plugins:${libs.versions.ktorVersion.get()}")
     implementation("io.ktor:ktor-client-core-jvm:${libs.versions.ktorVersion.get()}")
     implementation(libs.ktor.serialization.kotlinx.json)
-    implementation("com.squareup.okio:okio:3.6.0")
+    implementation("com.squareup.okio:okio:3.10.2")
 
     // For preview
     implementation("org.jetbrains.compose.ui:ui-tooling-preview:1.6.0")
