@@ -1,0 +1,59 @@
+{
+    "servers": {
+        "sequential-thinking": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-sequential-thinking@latest"
+            ]
+        },
+        "memory": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory@latest"
+            ],
+            "env": {
+                "MEMORY_PERSIST": "true",
+                "MEMORY_PATH": "~./memory.json"
+            }
+        },
+        "tavily-mcp": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "tavily-mcp@0.1.2"
+            ],
+            "env": {
+                "TAVILY_API_KEY": "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"
+            }
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/Users/nikhilsalunke/Desktop/Claude"
+            ]
+        },
+        "mcp-installer": {
+            "command": "npx",
+            "args": [
+                "@anaisbetts/mcp-installer"
+            ]
+        },
+        "iterm-mcp": {
+            "command": "npx",
+            "args": [
+                "iterm-mcp"
+            ],
+            "env": {}
+        },
+        "mcp-taskmanager": {
+            "command": "npx",
+            "args": [
+                "@kazuph/mcp-taskmanager"
+            ]
+        }
+    }
+}
